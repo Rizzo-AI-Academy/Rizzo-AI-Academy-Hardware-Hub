@@ -38,11 +38,15 @@ npm run dev              # http://localhost:3000
 
 ## Produzione
 
+> 🚀 **Vuoi metterla online?** Vai direttamente alla sezione
+> [Installazione sulla VPS — per Simone (o il suo Agente AI)](#-installazione-sulla-vps--per-simone-o-il-suo-agente-ai).
+
 ### Percorso principale: Docker Compose
 
 ```bash
 cp .env.example .env
-# edita .env e imposta un ADMIN_TOKEN lungo e casuale
+# genera ADMIN_TOKEN SENZA stamparlo (vedi sezione "Gestione dei segreti"):
+sed -i "s|^ADMIN_TOKEN=.*|ADMIN_TOKEN=$(openssl rand -hex 32)|" .env
 docker compose up -d --build
 ```
 
@@ -138,10 +142,103 @@ cd mcp-server && npm install
 Tool MCP esposti: `list_products`, `create_product`, `update_product`, `delete_product`,
 `list_comments`, `set_comment_visibility`, `delete_comment`.
 
-## Pubblicazione su VPS Ubuntu (passo-passo)
+## 🚀 Installazione sulla VPS — per Simone (o il suo Agente AI)
 
-Pensato per una persona non tecnica o per un agente AI. Prerequisito: un VPS Ubuntu 22.04+
-con accesso SSH e (consigliato) un dominio che punta all'IP del VPS.
+**Simone, non serve che tu sappia programmare.** Apri il tuo agente AI (Kimi, Claude, ChatGPT
+con accesso shell, ecc.) sulla VPS via SSH e incolla il brief qui sotto. L'agente farà tutto da solo.
+
+### Prerequisiti (li prepara Carlo)
+
+1. Un **VPS Ubuntu 22.04+** con accesso SSH
+2. Un **dominio** (es. `hardware.esempio.it`) con record A che punta all'IP del VPS
+3. Carlo ti ha aggiunto come **collaboratore** della repo privata GitHub
+4. Carlo ti ha detto il dominio da usare
+
+### 📋 Brief da incollare all'agente AI (copia tutto il blocco)
+
+````text
+Devi installare la webapp "Rizzo AI Academy — Hardware Hub" su questo server Ubuntu
+in produzione, seguendo il README del repo. Repo: https://github.com/WolCarlos/Rizzo-AI-Academy-Hardware-Hub
+Dominio da usare: <DOMINIO, es. hardware.esempio.it>
+
+REGOLE SUI SEGRETI (vincolanti, dal AGENTS.md del progetto):
+- I segreti si GENERANO e si USANO, non si leggono MAI.
+- NON stampare mai a video token o password: niente `cat .env`, niente `echo $TOKEN`,
+  niente segreti nei log o nei tuoi messaggi.
+- Genera ADMIN_TOKEN con `openssl rand -hex 32` scrivendolo DIRETTAMENTE nel file,
+  senza farlo transitare nel tuo contesto (vedi comando al punto 3).
+- Per verificare che un segreto esiste usa solo test strutturali:
+  `grep -c '^ADMIN_TOKEN=.' .env` deve stampare 1, oppure `[ -s .env ] && echo presente`.
+
+PASSI:
+1. Installa Docker: `curl -fsSL https://get.docker.com | sudo sh` e
+   `sudo usermod -aG docker $USER` (poi rientra in SSH se serve).
+2. Clona la repo (è privata: se serve, `gh auth login` oppure chiedimi un access token
+   da usare solo per il clone, poi cancellalo dalla history della shell).
+   `git clone https://github.com/WolCarlos/Rizzo-AI-Academy-Hardware-Hub.git && cd Rizzo-AI-Academy-Hardware-Hub`
+3. Crea i segreti SENZA leggerli né stamparli:
+     cp .env.example .env
+     sed -i "s|^ADMIN_TOKEN=.*|ADMIN_TOKEN=$(openssl rand -hex 32)|" .env
+     chmod 600 .env
+   Verifica SOLO la struttura: `grep -c '^ADMIN_TOKEN=.' .env` (atteso: 1).
+4. Consegna il token al proprietario in modo sicuro: salvalo in un file FUORI dalla repo
+   sulla macchina locale di Simone (es. con `ssh` inverso o chiedendo a Simone di eseguire
+   un comando che lo copia), file che Simone metterà nel suo password manager e poi
+   cancellerà. Il token NON va mai stampato a video né scritto in chat.
+5. Avvia: `docker compose up -d --build` e controlla `docker compose logs --tail=20`.
+6. HTTPS: installa Caddy (`sudo apt install -y caddy`), scrivi in /etc/caddy/Caddyfile:
+     <DOMINIO> {
+         reverse_proxy localhost:3000
+     }
+   poi `sudo systemctl reload caddy`. Apri solo 80/443/22 con ufw.
+7. VERIFICHE (riporta solo questi esiti, mai segreti):
+   - `curl -s -o /dev/null -w "%{http_code}" https://<DOMINIO>/` → 200
+   - `curl -s https://<DOMINIO>/api/hardware | grep -o '"slug"' | wc -l` → ≥ 13
+   - `curl -s -o /dev/null -w "%{http_code}" https://<DOMINIO>/api/admin/comments` → 401
+   - `docker compose ps` → container "running"
+8. Report finale per Simone: solo URL del sito, esito dei 4 check, e conferma che
+   `.env` esiste con ADMIN_TOKEN impostato (senza mostrarlo).
+````
+
+### Dopo l'installazione
+
+- Simone riceve dall'agente **solo l'URL del sito** e l'esito dei check.
+- Il **token admin** arriva a Carlo tramite il file sicuro (punto 4 del brief):
+  Simone lo salva nel password manager, lo condivide con Carlo (es. Bitwarden Send),
+  poi **cancella il file**.
+- Carlo usa il token su `https://<dominio>/admin` per la dashboard, oppure lo mette
+  come `HARDWARE_HUB_ADMIN_TOKEN` nel suo agente AI (vedi sezione "Gestione da agenti AI").
+
+---
+
+## 🔐 Gestione dei segreti (regole per TUTTI, umani e agenti)
+
+Vale per `ADMIN_TOKEN` e qualsiasi credenziale del progetto:
+
+1. **Un segreto si genera e si usa, non si legge.** Non va mai stampato a video, scritto
+   in chat, committato o copiato in file temporanei.
+2. **Generazione** (direttamente nel file, senza output):
+   ```bash
+   sed -i "s|^ADMIN_TOKEN=.*|ADMIN_TOKEN=$(openssl rand -hex 32)|" .env && chmod 600 .env
+   ```
+3. **Verifica solo strutturale** (mai il valore):
+   ```bash
+   grep -c '^ADMIN_TOKEN=.' .env   # atteso: 1
+   ```
+4. **Dove vive**: solo nel file `.env` sul VPS (gitignored, permessi 600) e nel password
+   manager di Carlo/Simone. Mai nel repo, mai nel README.
+5. **Rotazione**: se un token finisce per errore in un log, in chat o nel contesto di un
+   modello AI → è compromesso: rigenerarlo subito col comando al punto 2 e riavviare
+   (`docker compose restart`). Le sessioni dashboard attive verranno invalidate.
+6. **Passaggio tra persone**: solo via password manager / link monouso (Bitwarden Send).
+   Mai via WhatsApp/email in chiaro.
+
+---
+
+## Pubblicazione su VPS Ubuntu (passo-passo manuale, per riferimento)
+
+Questi sono i passi che l'agente AI di Simone esegue seguendo il brief qui sopra.
+Prerequisito: VPS Ubuntu 22.04+ con accesso SSH e un dominio che punta all'IP del VPS.
 
 ### 1. Installa Docker
 
@@ -154,16 +251,17 @@ sudo usermod -aG docker $USER   # poi esci e rientra in SSH
 ### 2. Scarica il codice
 
 ```bash
-git clone https://github.com/<tuo-utente>/Rizzo-AI-Academy-Hardware-Hub.git
+git clone https://github.com/WolCarlos/Rizzo-AI-Academy-Hardware-Hub.git
 cd Rizzo-AI-Academy-Hardware-Hub
 ```
 
-### 3. Configura i segreti
+### 3. Configura i segreti (senza mai leggerli — vedi sezione dedicata)
 
 ```bash
 cp .env.example .env
-nano .env
-# imposta ADMIN_TOKEN con un valore casuale, ad esempio generato con: openssl rand -hex 32
+sed -i "s|^ADMIN_TOKEN=.*|ADMIN_TOKEN=$(openssl rand -hex 32)|" .env
+chmod 600 .env
+grep -c '^ADMIN_TOKEN=.' .env   # atteso: 1 — NON stampare il valore
 ```
 
 ### 4. Avvia
@@ -176,7 +274,7 @@ docker compose logs -f   # per vedere i log (Ctrl+C per uscire)
 L'app è attiva sulla porta 3000. Il DB SQLite persiste nel volume `hardware-hub-data`:
 per vederlo, `docker volume inspect hardware-hub-data`.
 
-### 5. (Consigliato) HTTPS con Caddy
+### 5. HTTPS con Caddy (consigliato)
 
 Caddy è il reverse proxy più semplice: configura HTTPS automatico con Let's Encrypt.
 
@@ -208,6 +306,17 @@ docker compose restart         # riavvio
 docker compose down            # stop (i dati restano nel volume)
 docker compose exec hardware-hub sh   # shell dentro il container
 ```
+
+### 7. Backup del database
+
+I commenti della community sono il dato prezioso. Backup settimanale consigliato:
+
+```bash
+docker run --rm -v hardware-hub-data:/data -v $(pwd):/backup alpine \
+  cp /data/hardware-hub.db /backup/backup-$(date +%Y%m%d).db
+```
+
+(oppure un cron con lo stesso comando).
 
 ## Immagini dei prodotti
 
