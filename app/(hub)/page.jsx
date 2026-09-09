@@ -14,6 +14,9 @@ export default function HomePage() {
           Schede illustrate, specifiche e commenti aperti: chiunque può contribuire, nessuno può
           cancellare.
         </p>
+        <a href="/aggiungi" className="btn" style={{ marginTop: 18, display: 'inline-block' }}>
+          + Aggiungi un PC al catalogo
+        </a>
       </section>
       <Catalog hardware={hardware} />
     </>

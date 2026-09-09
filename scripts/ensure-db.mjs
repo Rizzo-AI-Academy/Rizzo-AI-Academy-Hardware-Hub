@@ -52,5 +52,10 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_trap_logs_created ON trap_logs(created_at DESC);
 `);
+// Migrazione: colonna approved (1 = visibile, 0 = in attesa di moderazione admin)
+const cols = db.prepare('PRAGMA table_info(hardware)').all();
+if (!cols.some((c) => c.name === 'approved')) {
+  db.exec('ALTER TABLE hardware ADD COLUMN approved INTEGER NOT NULL DEFAULT 1');
+}
 db.close();
 console.log(`Database pronto: ${dbPath}`);

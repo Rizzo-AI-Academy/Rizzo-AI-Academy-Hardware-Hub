@@ -36,6 +36,7 @@ export default function AdminDashboard() {
   // Filtri prodotti
   const [pQuery, setPQuery] = useState('');
   const [pCategory, setPCategory] = useState('Tutte');
+  const [pStatus, setPStatus] = useState('tutti'); // tutti | attesa | pubblicati
   const [pSort, setPSort] = useState('categoria');
 
   // Filtri commenti
@@ -79,7 +80,9 @@ export default function AdminDashboard() {
         h.brand.toLowerCase().includes(q) ||
         (h.description || '').toLowerCase().includes(q);
       const matchCategory = pCategory === 'Tutte' || h.category === pCategory;
-      return matchQuery && matchCategory;
+      const matchStatus =
+        pStatus === 'tutti' || (pStatus === 'attesa' ? !h.approved : !!h.approved);
+      return matchQuery && matchCategory && matchStatus;
     });
     const by = {
       categoria: (a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name),
@@ -87,9 +90,12 @@ export default function AdminDashboard() {
       'prezzo-asc': (a, b) => priceValue(a) - priceValue(b),
       'prezzo-desc': (a, b) => priceValue(b) - priceValue(a),
       commenti: (a, b) => b.comments_total - a.comments_total,
+      attesa: (a, b) => (a.approved - b.approved) || b.id - a.id, // prima i da approvare
     };
     return [...list].sort(by[pSort]);
-  }, [hardware, pQuery, pCategory, pSort]);
+  }, [hardware, pQuery, pCategory, pStatus, pSort]);
+
+  const pendingCount = hardware.filter((h) => !h.approved).length;
 
   const filteredComments = useMemo(() => {
     const q = cQuery.trim().toLowerCase();
@@ -149,6 +155,13 @@ export default function AdminDashboard() {
     return true;
   }
 
+  async function toggleApproval(hw) {
+    if (await api('PATCH', `/api/admin/hardware/${hw.id}`, { approved: !hw.approved })) {
+      setNotice(hw.approved ? `"${hw.name}" tolto dal catalogo pubblico.` : `"${hw.name}" approvato e pubblicato!`);
+      load();
+    }
+  }
+
   async function deleteHardware(hw) {
     if (!confirm(`Eliminare "${hw.name}"? Verranno eliminati anche i suoi ${hw.comments_total} commenti. Operazione irreversibile.`)) return;
     if (await api('DELETE', `/api/admin/hardware/${hw.id}`)) {
@@ -189,7 +202,7 @@ export default function AdminDashboard() {
 
       <div className="filters">
         {[
-          ['prodotti', `Prodotti (${hardware.length})`],
+          ['prodotti', `Prodotti (${hardware.length}${pendingCount ? `, ${pendingCount} da approvare` : ''})`],
           ['commenti', `Commenti (${comments.length}${hiddenCount ? `, ${hiddenCount} nascosti` : ''})`],
           ['trappola', `Trappola 🪤 (${trapTotal})`],
         ].map(([key, label]) => (
@@ -225,10 +238,16 @@ export default function AdminDashboard() {
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
+            <select value={pStatus} onChange={(e) => setPStatus(e.target.value)} aria-label="Filtra per stato">
+              <option value="tutti">Tutti gli stati</option>
+              <option value="attesa">⏳ In attesa di approvazione</option>
+              <option value="pubblicati">Solo pubblicati</option>
+            </select>
             <select value={pSort} onChange={(e) => setPSort(e.target.value)} aria-label="Ordina prodotti">
               {SORTS.prodotti.map(([k, label]) => (
                 <option key={k} value={k}>{label}</option>
               ))}
+              <option value="attesa">Prima i da approvare</option>
             </select>
             {!showNew && !editing && (
               <button className="btn" onClick={() => setShowNew(true)}>
@@ -264,7 +283,10 @@ export default function AdminDashboard() {
               <div key={hw.id} className="admin-row">
                 <img src={hw.images?.[0]} alt="" className="admin-thumb" />
                 <div className="admin-row-main">
-                  <strong>{hw.name}</strong>
+                  <strong>
+                    {hw.name}
+                    {!hw.approved && <span className="badge badge-pending">⏳ Da approvare</span>}
+                  </strong>
                   <span className="form-note">
                     {hw.category} · {hw.brand} ·{' '}
                     {hw.price_eur != null ? `€${Number(hw.price_eur).toLocaleString('it-IT')}` : 'prezzo da verificare'} ·{' '}
@@ -276,6 +298,12 @@ export default function AdminDashboard() {
                   </span>
                 </div>
                 <div className="admin-row-actions">
+                  <button
+                    className={`btn ${hw.approved ? 'btn-outline' : ''}`}
+                    onClick={() => toggleApproval(hw)}
+                  >
+                    {hw.approved ? 'Ritira' : '✓ Approva'}
+                  </button>
                   <button className="btn btn-outline" onClick={() => { setEditing(hw); setShowNew(false); window.scrollTo(0, 0); }}>
                     Modifica
                   </button>

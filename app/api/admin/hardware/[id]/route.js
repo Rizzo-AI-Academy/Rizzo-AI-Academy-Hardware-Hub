@@ -33,6 +33,16 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Richiesta non valida' }, { status: 400 });
   }
 
+  // Approvazione/rimozione dalla coda di moderazione (prodotti inviati dagli utenti)
+  if (body.approved !== undefined) {
+    const approved = body.approved ? 1 : 0;
+    db.prepare('UPDATE hardware SET approved = ? WHERE id = ?').run(approved, existing.id);
+    return NextResponse.json({
+      ok: true,
+      hardware: parseHardware(db.prepare('SELECT * FROM hardware WHERE id = ?').get(existing.id)),
+    });
+  }
+
   const { data, error } = validateProductPayload(body, { partial: true });
   if (error) return NextResponse.json({ error }, { status: 400 });
 

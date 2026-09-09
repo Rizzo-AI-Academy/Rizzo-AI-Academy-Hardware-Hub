@@ -20,6 +20,9 @@ export default function RootLayout({ children }) {
             </a>
             <nav>
               <a href="/">Catalogo</a>
+              <a href="/aggiungi" className="btn btn-nav">
+                + Aggiungi un PC
+              </a>
               <a href="https://www.rizzoaiacademy.com/" target="_blank" rel="noopener noreferrer">
                 rizzoaiacademy.com ↗
               </a>
@@ -33,9 +36,9 @@ export default function RootLayout({ children }) {
               <a href="https://www.rizzoaiacademy.com/" target="_blank" rel="noopener noreferrer">
                 Rizzo AI Academy
               </a>{' '}
-              — Hardware Hub · Catalogo community-driven di hardware per AI, riservato agli
-              iscritti. I commenti si possono solo aggiungere: nessuno può cancellare quelli degli
-              altri.
+              — Hardware Hub · Catalogo community-driven di hardware per AI. Chiunque può
+              aggiungere un PC o un commento: i contenuti si possono solo aggiungere, nessuno può
+              cancellare quelli degli altri.
             </p>
           </div>
         </footer>

@@ -62,6 +62,11 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_trap_logs_created ON trap_logs(created_at DESC);
 `);
+// Migrazione approved (come ensure-db)
+const hwCols = db.prepare('PRAGMA table_info(hardware)').all();
+if (!hwCols.some((c) => c.name === 'approved')) {
+  db.exec('ALTER TABLE hardware ADD COLUMN approved INTEGER NOT NULL DEFAULT 1');
+}
 
 const upsert = db.prepare(`
   INSERT INTO hardware (slug, name, brand, category, price_eur, price_note, description, specs, images, buy_links)
