@@ -124,7 +124,7 @@ Tutto funziona via HTTPS pubblico: **non serve accesso SSH alla VPS** per gestir
 
 ## 🤖 Gestione da agenti AI (Skill o MCP) — guida completa
 
-Il sito è gestibile interamente da un agente AI remoto (Carlos non accede mai alla VPS):
+Il sito è gestibile interamente da un agente AI remoto (Carloss non accede mai alla VPS):
 l'agente chiama le API admin via HTTPS usando URL pubblico + token admin.
 **Due modi alternativi** — consigliamo la Skill (universale), l'MCP è un optional.
 
@@ -226,14 +226,14 @@ Tool MCP esposti: `get_stats`, `list_products`, `create_product`, `update_produc
 **Simone, non serve che tu sappia programmare.** Apri il tuo agente AI (Kimi, Claude, ChatGPT
 con accesso shell, ecc.) sulla VPS via SSH e incolla il brief qui sotto. L'agente farà tutto da solo.
 
-### Prerequisiti (li prepara Carlo)
+### Prerequisiti (li prepara Carlos)
 
 1. Un **VPS Ubuntu 22.04+** con accesso SSH
 2. Un **dominio** (es. `hardware.esempio.it`) con record A che punta all'IP del VPS.
    **Non ce l'hai ancora? Nessun problema**: vedi "Prova senza dominio" qui sotto —
    il dominio si può aggiungere dopo senza reinstallare nulla.
-3. Carlo ti ha aggiunto come **collaboratore** della repo privata GitHub
-4. Carlo ti ha detto il dominio da usare (quando lo avrete)
+3. Carlos ti ha aggiunto come **collaboratore** della repo privata GitHub
+4. Carlos ti ha detto il dominio da usare (quando lo avrete)
 
 ### Prova senza dominio (solo per Simone, prima di andare online)
 
@@ -254,7 +254,7 @@ la community, il dominio + Caddy (HTTPS) è obbligatorio — sono le 3 righe nel
 
 ````text
 Devi installare la webapp "Rizzo AI Academy — Hardware Hub" su questo server Ubuntu
-in produzione, seguendo il README del repo. Repo: https://github.com/WolCarlos/Rizzo-AI-Academy-Hardware-Hub
+in produzione, seguendo il README del repo. Repo: https://github.com/WolCarloss/Rizzo-AI-Academy-Hardware-Hub
 Dominio da usare: <DOMINIO, es. hardware.esempio.it>
 
 REGOLE SUI SEGRETI (vincolanti, dal AGENTS.md del progetto):
@@ -271,7 +271,7 @@ PASSI:
    `sudo usermod -aG docker $USER` (poi rientra in SSH se serve).
 2. Clona la repo (è privata: se serve, `gh auth login` oppure chiedimi un access token
    da usare solo per il clone, poi cancellalo dalla history della shell).
-   `git clone https://github.com/WolCarlos/Rizzo-AI-Academy-Hardware-Hub.git && cd Rizzo-AI-Academy-Hardware-Hub`
+   `git clone https://github.com/WolCarloss/Rizzo-AI-Academy-Hardware-Hub.git && cd Rizzo-AI-Academy-Hardware-Hub`
 3. Crea i segreti SENZA leggerli né stamparli:
      cp .env.example .env
      sed -i "s|^ADMIN_TOKEN=.*|ADMIN_TOKEN=$(openssl rand -hex 32)|" .env
@@ -299,10 +299,10 @@ PASSI:
 ### Dopo l'installazione
 
 - Simone riceve dall'agente **solo l'URL del sito** e l'esito dei check.
-- Il **token admin** arriva a Carlo tramite il file sicuro (punto 4 del brief):
-  Simone lo salva nel password manager, lo condivide con Carlo (es. Bitwarden Send),
+- Il **token admin** arriva a Carlos tramite il file sicuro (punto 4 del brief):
+  Simone lo salva nel password manager, lo condivide con Carlos (es. Bitwarden Send),
   poi **cancella il file**.
-- Carlo usa il token su `https://<dominio>/admin` per la dashboard, oppure lo mette
+- Carlos usa il token su `https://<dominio>/admin` per la dashboard, oppure lo mette
   come `HARDWARE_HUB_ADMIN_TOKEN` nel suo agente AI (vedi sezione "Gestione da agenti AI").
 
 ---
@@ -322,7 +322,7 @@ Vale per `ADMIN_TOKEN` e qualsiasi credenziale del progetto:
    grep -c '^ADMIN_TOKEN=.' .env   # atteso: 1
    ```
 4. **Dove vive**: solo nel file `.env` sul VPS (gitignored, permessi 600) e nel password
-   manager di Carlo/Simone. Mai nel repo, mai nel README.
+   manager di Carlos/Simone. Mai nel repo, mai nel README.
 5. **Rotazione**: se un token finisce per errore in un log, in chat o nel contesto di un
    modello AI → è compromesso: rigenerarlo subito col comando al punto 2 e riavviare
    (`docker compose restart`). Le sessioni dashboard attive verranno invalidate.
@@ -347,7 +347,7 @@ sudo usermod -aG docker $USER   # poi esci e rientra in SSH
 ### 2. Scarica il codice
 
 ```bash
-git clone https://github.com/WolCarlos/Rizzo-AI-Academy-Hardware-Hub.git
+git clone https://github.com/WolCarloss/Rizzo-AI-Academy-Hardware-Hub.git
 cd Rizzo-AI-Academy-Hardware-Hub
 ```
 
