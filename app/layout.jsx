@@ -4,6 +4,7 @@ export const metadata = {
   title: 'Rizzo AI Academy — Hardware Hub',
   description:
     'Catalogo community-driven di hardware per AI: mini PC, Mac, workstation e schede di sviluppo, con commenti aperti della community italiana.',
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({ children }) {

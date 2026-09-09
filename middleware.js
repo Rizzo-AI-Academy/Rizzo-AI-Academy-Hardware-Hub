@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 
-// TRAPPOLA anti-bot: i path tipici di scanner/bot (`.env`, `.git`, `wp-admin`, ecc.)
-// non esistono in questa app Next.js — chi li cerca è quasi certamente automatizzato.
-// Il middleware li riscrive all'endpoint /api/trap che LOGGA tutto (IP, UA, header, body)
-// e risponde con contenuti-esca plausibili.
+// Middleware globale:
+// 1) TRAPPOLA anti-bot: path-esca tipici degli scanner → log + risposte-esca
+// 2) ACCESS GATE: se SITE_ACCESS_KEY è impostata, il sito è riservato agli iscritti
+//    Academy (cookie hh_access). Le API admin restano libere (hanno il Bearer token).
 
 const TRAP_PREFIXES = [
   '/.env',
@@ -21,30 +21,46 @@ const TRAP_PREFIXES = [
   '/debug',
 ];
 
-export function middleware(request) {
+// Path esenti dal cancello: pagina di accesso, admin API (hanno il Bearer), trappola, asset pubblici
+const GATE_EXEMPT = ['/accesso', '/api/accesso', '/api/admin', '/api/trap', '/hardware-images', '/icon.svg', '/robots.txt'];
+
+async function accessDigest(key) {
+  const data = new TextEncoder().encode(`${key}::academy-gate`);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export async function middleware(request) {
   const { pathname } = request.nextUrl;
-  const hit = TRAP_PREFIXES.some((p) => pathname.toLowerCase().startsWith(p));
-  if (!hit) return NextResponse.next();
+
+  // 1) Trappola: sempre attiva, anche davanti al cancello (gli scanner arrivano comunque)
+  if (TRAP_PREFIXES.some((p) => pathname.toLowerCase().startsWith(p))) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/api/trap';
+    url.search = `?path=${encodeURIComponent(pathname)}`;
+    return NextResponse.rewrite(url);
+  }
+
+  // 2) Access gate
+  const key = process.env.SITE_ACCESS_KEY;
+  if (!key) return NextResponse.next(); // cancello disattivato (sviluppo)
+  if (GATE_EXEMPT.some((p) => pathname.startsWith(p))) return NextResponse.next();
+
+  const cookie = request.cookies.get('hh_access')?.value;
+  if (cookie && cookie === (await accessDigest(key))) {
+    return NextResponse.next();
+  }
+
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.json({ error: 'Accesso riservato agli iscritti Academy.' }, { status: 401 });
+  }
   const url = request.nextUrl.clone();
-  url.pathname = '/api/trap';
-  url.search = `?path=${encodeURIComponent(pathname)}`;
-  return NextResponse.rewrite(url);
+  url.pathname = '/accesso';
+  url.search = pathname !== '/' ? `?from=${encodeURIComponent(pathname)}` : '';
+  return NextResponse.redirect(url);
 }
 
 export const config = {
-  matcher: [
-    '/.env',
-    '/.git/:path*',
-    '/.aws/:path*',
-    '/.svn/:path*',
-    '/wp-admin/:path*',
-    '/wp-login.php',
-    '/wordpress/:path*',
-    '/xmlrpc.php',
-    '/phpmyadmin/:path*',
-    '/config.php',
-    '/server-status',
-    '/actuator/:path*',
-    '/debug/:path*',
-  ],
+  // Tutto tranne gli asset interni di Next.js
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };

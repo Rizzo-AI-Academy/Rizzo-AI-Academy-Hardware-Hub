@@ -13,6 +13,11 @@ nessun edit/delete lato pubblico, quindi nessuno può cancellare i commenti degl
 - **Scheda prodotto**: galleria, tabella specifiche (CPU, RAM, GPU/NPU, TOPS AI, storage, consumo, OS),
   prezzo indicativo, link "Dove comprarlo", descrizione
 - **Commenti senza login**: nome + testo + voto opzionale 1-5 stelle, più recenti prima
+- **Accesso riservato agli iscritti Academy**: chiave condivisa (`SITE_ACCESS_KEY`) richiesta
+  una volta all'ingresso (cookie 30 giorni) — niente account, ma il sito non è aperto al pubblico
+- **Anti-indicizzazione totale**: `robots.txt` disallow all, header `X-Robots-Tag: noindex` su
+  ogni risposta, meta robots noindex — il sito è raggiungibile da chi ha il link ma non
+  trovabile sui motori di ricerca
 - **Anti-abuso**: captcha self-hosted "Non sono un robot" (challenge firmata HMAC, uso singolo,
   tempo minimo umano — nessun servizio esterno), rate limit per IP (max 2 commenti / 30 sec per
   hardware), honeypot anti-bot, sanitizzazione input + escaping output (anti-XSS), header di sicurezza
@@ -77,6 +82,7 @@ periodici** (basta copiare il file ad app ferma, oppure usa `sqlite3 ... ".backu
 | --------------- | -------------------------- | ---------------------------------------- |
 | `PORT`          | `3000`                     | Porta del server                         |
 | `ADMIN_TOKEN`   | —                          | Token Bearer per la moderazione admin    |
+| `SITE_ACCESS_KEY` | — (vuota = sito aperto)  | Chiave d'accesso iscritti Academy        |
 | `DATABASE_PATH` | `./data/hardware-hub.db`   | Percorso del file SQLite                 |
 
 ⚠️ `.env` è gitignored: **mai committare segreti**.
@@ -291,8 +297,8 @@ REGOLE SUI SEGRETI (vincolanti, dal AGENTS.md del progetto):
 - I segreti si GENERANO e si USANO, non si leggono MAI.
 - NON stampare mai a video token o password: niente `cat .env`, niente `echo $TOKEN`,
   niente segreti nei log o nei tuoi messaggi.
-- Genera ADMIN_TOKEN con `openssl rand -hex 32` scrivendolo DIRETTAMENTE nel file,
-  senza farlo transitare nel tuo contesto (vedi comando al punto 3).
+- Genera ADMIN_TOKEN e SITE_ACCESS_KEY con `openssl rand` scrivendoli DIRETTAMENTE nel file,
+  senza farli transitare nel tuo contesto (vedi comando al punto 3).
 - Per verificare che un segreto esiste usa solo test strutturali:
   `grep -c '^ADMIN_TOKEN=.' .env` deve stampare 1, oppure `[ -s .env ] && echo presente`.
 
@@ -302,15 +308,18 @@ PASSI:
 2. Clona la repo (è privata: se serve, `gh auth login` oppure chiedimi un access token
    da usare solo per il clone, poi cancellalo dalla history della shell).
    `git clone https://github.com/WolCarloss/Rizzo-AI-Academy-Hardware-Hub.git && cd Rizzo-AI-Academy-Hardware-Hub`
-3. Crea i segreti SENZA leggerli né stamparli:
+3. Crea i segreti SENZA leggerli né stamparli (il sito è riservato agli iscritti Academy:
+   SITE_ACCESS_KEY è la chiave che gli iscritti useranno per entrare):
      cp .env.example .env
      sed -i "s|^ADMIN_TOKEN=.*|ADMIN_TOKEN=$(openssl rand -hex 32)|" .env
+     sed -i "s|^SITE_ACCESS_KEY=.*|SITE_ACCESS_KEY=$(openssl rand -hex 16)|" .env
      chmod 600 .env
-   Verifica SOLO la struttura: `grep -c '^ADMIN_TOKEN=.' .env` (atteso: 1).
-4. Consegna il token al proprietario in modo sicuro: salvalo in un file FUORI dalla repo
+   Verifica SOLO la struttura: `grep -c '^ADMIN_TOKEN=.' .env` (atteso: 1)
+   e `grep -c '^SITE_ACCESS_KEY=.' .env` (atteso: 1).
+4. Consegna i segreti al proprietario in modo sicuro: salvali in un file FUORI dalla repo
    sulla macchina locale di Simone (es. con `ssh` inverso o chiedendo a Simone di eseguire
-   un comando che lo copia), file che Simone metterà nel suo password manager e poi
-   cancellerà. Il token NON va mai stampato a video né scritto in chat.
+   un comando che li copia), file che Simone metterà nel suo password manager e poi
+   cancellerà. I segreti NON vanno mai stampati a video né scritti in chat.
 5. Avvia: `docker compose up -d --build` e controlla `docker compose logs --tail=20`.
 6. HTTPS: installa Caddy (`sudo apt install -y caddy`), scrivi in /etc/caddy/Caddyfile:
      <DOMINIO> {
@@ -318,28 +327,71 @@ PASSI:
      }
    poi `sudo systemctl reload caddy`. Apri solo 80/443/22 con ufw.
 7. VERIFICHE (riporta solo questi esiti, mai segreti):
-   - `curl -s -o /dev/null -w "%{http_code}" https://<DOMINIO>/` → 200
-   - `curl -s https://<DOMINIO>/api/hardware | grep -o '"slug"' | wc -l` → ≥ 13
+   - `curl -s -o /dev/null -w "%{http_code}" https://<DOMINIO>/` → 307 (redirect a /accesso:
+     il cancello iscritti è attivo, è il comportamento voluto)
+   - `curl -s -o /dev/null -w "%{http_code}" https://<DOMINIO>/api/hardware` → 401 (niente chiave, niente dati)
+   - `curl -s https://<DOMINIO>/robots.txt` → deve contenere "Disallow: /"
+   - `curl -sI https://<DOMINIO>/ | grep -i x-robots-tag` → deve contenere "noindex"
    - `curl -s -o /dev/null -w "%{http_code}" https://<DOMINIO>/api/admin/comments` → 401
    - `docker compose ps` → container "running"
-8. Report finale per Simone: solo URL del sito, esito dei 4 check, e conferma che
-   `.env` esiste con ADMIN_TOKEN impostato (senza mostrarlo).
+   - test umano: Simone apre l'URL con il tunnel/browser, inserisce la SITE_ACCESS_KEY dal
+     password manager e vede il catalogo con ≥ 13 prodotti
+8. Report finale per Simone: solo URL del sito, esito dei check, e conferma che
+   `.env` esiste con ADMIN_TOKEN e SITE_ACCESS_KEY impostati (senza mostrarli).
 ````
 
 ### Dopo l'installazione
 
 - Simone riceve dall'agente **solo l'URL del sito** e l'esito dei check.
-- Il **token admin** arriva a Carlos tramite il file sicuro (punto 4 del brief):
-  Simone lo salva nel password manager, lo condivide con Carlos (es. Bitwarden Send),
-  poi **cancella il file**.
-- Carlos usa il token su `https://<dominio>/admin` per la dashboard, oppure lo mette
+- Il **token admin** e la **chiave Academy** arrivano a Carlos tramite il file sicuro
+  (punto 4 del brief): Simone li salva nel password manager, li condivide con Carlos
+  (es. Bitwarden Send), poi **cancella il file**.
+- Carlos condivide **link + chiave Academy** agli iscritti solo nei canali riservati,
+  e usa il token su `https://<dominio>/admin` per la dashboard, oppure lo mette
   come `HARDWARE_HUB_ADMIN_TOKEN` nel suo agente AI (vedi sezione "Gestione da agenti AI").
+
+---
+
+## 🔒 Sito riservato agli iscritti Academy (non pubblico, non indicizzato)
+
+Il sito è pensato per essere **raggiungibile da chi ha il link ma non trovabile su internet**.
+Due livelli di protezione, entrambi già attivi nel codice:
+
+1. **Cancello d'accesso con chiave condivisa** (`SITE_ACCESS_KEY` nel `.env`): chi apre il sito
+   vede solo la pagina "Area riservata agli iscritti" finché non inserisce la chiave. Dopo
+   l'ingresso vale un cookie per 30 giorni. Niente account da gestire: la chiave si condivide
+   solo nei canali riservati dell'Academy (gruppo iscritti, area membri, ecc.).
+   Se la chiave trapela → si rigenera (vedi "Gestione dei segreti") e si ridistribuisce.
+2. **Anti-indicizzazione**: `robots.txt` con `Disallow: /`, header `X-Robots-Tag: noindex,
+   nofollow, noarchive, nosnippet` su ogni risposta, meta robots noindex su tutte le pagine.
+
+### Configurazione dominio/DNS (per Simone / agente AI)
+
+Obiettivo: HTTPS funzionante per chi ha il link, minima visibilità accidentale.
+
+1. **Scegli un sottodominio non banale** del dominio Academy, es. `hw-hub-2026.esempio.it`
+   (evita parole ovvie come `hardware.`, `ai.`, `hub.` da sole).
+2. **DNS**: crea un record `A` del sottodominio → IP del VPS. Non servono altri record.
+3. **HTTPS**: il Caddyfile del brief usa quel sottodominio; Caddy emette il certificato
+   Let's Encrypt automaticamente.
+4. **Non linkare mai il sito** da pagine pubbliche (sito Academy pubblico, social, newsletter
+   indicizzabili): i motori seguono i link. Condividilo solo nei canali privati degli iscritti.
+5. **Verifica periodica**: cerca `site:iltuodominio.it` su Google — non deve comparire nulla.
+   robots.txt e X-Robots-Tag impediscono l'indicizzazione futura, ma non rimuovono pagine già
+   indicizzate: se dovesse succedere, richiedi la rimozione da Google Search Console.
+
+> ⚠️ **Onestà tecnica**: i certificati HTTPS finiscono nei log pubblici di Certificate
+> Transparency (crt.sh), quindi un sottodominio HTTPS è *tecnicamente* enumerabile da chi lo
+> cerca apposta. Ecco perché la protezione vera è il **cancello con chiave**: chi scopre il
+> dominio trova solo la pagina di accesso. Se si vuole ridurre anche questo, si può usare un
+> certificato wildcard (`*.esempio.it`, richiede validazione DNS — Caddy lo gestisce con il
+> plugin DNS del provider), così il sottodominio non appare nei log CT.
 
 ---
 
 ## 🔐 Gestione dei segreti (regole per TUTTI, umani e agenti)
 
-Vale per `ADMIN_TOKEN` e qualsiasi credenziale del progetto:
+Vale per `ADMIN_TOKEN`, `SITE_ACCESS_KEY` e qualsiasi credenziale del progetto:
 
 1. **Un segreto si genera e si usa, non si legge.** Non va mai stampato a video, scritto
    in chat, committato o copiato in file temporanei.
