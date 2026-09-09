@@ -124,7 +124,7 @@ Tutto funziona via HTTPS pubblico: **non serve accesso SSH alla VPS** per gestir
 
 ## 🤖 Gestione da agenti AI (Skill o MCP) — guida completa
 
-Il sito è gestibile interamente da un agente AI remoto (Carlo non accede mai alla VPS):
+Il sito è gestibile interamente da un agente AI remoto (Carlos non accede mai alla VPS):
 l'agente chiama le API admin via HTTPS usando URL pubblico + token admin.
 **Due modi alternativi** — consigliamo la Skill (universale), l'MCP è un optional.
 
