@@ -110,6 +110,13 @@ server.tool(
 );
 
 server.tool(
+  'get_stats',
+  'Metriche riassuntive del sito: n. prodotti, commenti (totali/nascosti), prodotti per categoria, ultimi commenti, prodotti con media voto più alta',
+  {},
+  async () => ok(await api('GET', '/api/admin/stats'))
+);
+
+server.tool(
   'list_comments',
   'Elenca tutti i commenti del sito, inclusi quelli nascosti, dal più recente',
   {},

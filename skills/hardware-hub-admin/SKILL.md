@@ -71,6 +71,14 @@ curl -s -X DELETE "$HARDWARE_HUB_URL/api/admin/hardware/<ID>" \
   -H "Authorization: Bearer $HARDWARE_HUB_ADMIN_TOKEN"
 ```
 
+## Metriche riassuntive
+
+```bash
+curl -s "$HARDWARE_HUB_URL/api/admin/stats" -H "Authorization: Bearer $HARDWARE_HUB_ADMIN_TOKEN"
+```
+Restituisce: n. prodotti, commenti totali/nascosti/visibili, prodotti per categoria,
+ultimi 5 commenti, prodotti con media voto più alta.
+
 ## Moderazione commenti
 
 ```bash

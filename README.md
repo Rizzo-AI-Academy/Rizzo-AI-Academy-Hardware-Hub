@@ -92,6 +92,7 @@ periodici** (basta copiare il file ad app ferma, oppure usa `sqlite3 ... ".backu
 | POST   | `/api/admin/hardware` 🔒             | Crea prodotto (immagine auto o da `image_url`) |
 | PATCH  | `/api/admin/hardware/:id` 🔒         | Modifica i campi forniti                       |
 | DELETE | `/api/admin/hardware/:id` 🔒         | Elimina prodotto + suoi commenti               |
+| GET    | `/api/admin/stats` 🔒                | Metriche: prodotti, commenti, top rated        |
 | POST   | `/api/admin/login`                   | Login dashboard (token → cookie), rate limited |
 | POST   | `/api/admin/logout`                  | Logout dashboard                               |
 
@@ -121,26 +122,104 @@ Dalla dashboard puoi:
 
 Tutto funziona via HTTPS pubblico: **non serve accesso SSH alla VPS** per gestire il sito.
 
-## Gestione da agenti AI (Skill o MCP)
+## 🤖 Gestione da agenti AI (Skill o MCP) — guida completa
 
-Il sito è gestibile interamente da un agente AI remoto, in due modi:
+Il sito è gestibile interamente da un agente AI remoto (Carlo non accede mai alla VPS):
+l'agente chiama le API admin via HTTPS usando URL pubblico + token admin.
+**Due modi alternativi** — consigliamo la Skill (universale), l'MCP è un optional.
 
-1. **Skill (consigliata, universale)** — `skills/hardware-hub-admin/SKILL.md`:
-   istruzioni pronte per qualsiasi agente (Kimi, Claude, ecc.) per chiamare le API REST
-   con `curl`. Configura le variabili `HARDWARE_HUB_URL` e `HARDWARE_HUB_ADMIN_TOKEN`
-   nell'ambiente dell'agente (mai nei prompt: vedi la Regola Zero in AGENTS.md).
-2. **Server MCP (opzionale)** — `mcp-server/`: gira **in locale** sulla macchina
-   dell'agente e parla con le API pubbliche. Setup:
+### Cosa possono fare gli agenti
+
+| Funzione | Via REST (Skill) | Tool MCP |
+| --- | --- | --- |
+| Metriche sito (prodotti, commenti, categorie, top rated) | `GET /api/admin/stats` | `get_stats` |
+| Elencare prodotti (con conteggi commenti) | `GET /api/admin/hardware` | `list_products` |
+| Creare un prodotto (con ricerca fonti e placeholder immagine) | `POST /api/admin/hardware` | `create_product` |
+| Modificare un prodotto (prezzo, spec, descrizione…) | `PATCH /api/admin/hardware/:id` | `update_product` |
+| Eliminare un prodotto (+ i suoi commenti) | `DELETE /api/admin/hardware/:id` | `delete_product` |
+| Elencare tutti i commenti (anche nascosti) | `GET /api/admin/comments` | `list_comments` |
+| Nascondere/mostrare un commento | `PATCH /api/admin/comments` | `set_comment_visibility` |
+| Eliminare un commento | `DELETE /api/admin/comments` | `delete_comment` |
+
+### Opzione A — Skill (consigliata, funziona con qualsiasi agente)
+
+La skill è il file [`skills/hardware-hub-admin/SKILL.md`](skills/hardware-hub-admin/SKILL.md):
+contiene istruzioni e comandi `curl` pronti. Setup:
+
+1. **Installa la skill nel tuo agente** copiando la cartella `skills/hardware-hub-admin/`
+   nella directory skills del tuo agente, ad esempio:
+   - Kimi CLI / Claude Code: `~/.agents/skills/hardware-hub-admin/` (oppure `.agents/skills/` nel progetto)
+   - altri agenti: incolla il contenuto di `SKILL.md` nel system prompt o nelle istruzioni personalizzate
+2. **Imposta le variabili d'ambiente** (mai nel prompt! Regola Zero):
+   ```bash
+   # Linux/macOS — aggiungi a ~/.bashrc o ~/.zshrc
+   export HARDWARE_HUB_URL="https://hardware.iltuodominio.it"
+   export HARDWARE_HUB_ADMIN_TOKEN="<token dal tuo password manager>"
+   ```
+   Su Windows (PowerShell, permanente per l'utente):
+   ```powershell
+   [Environment]::SetEnvironmentVariable('HARDWARE_HUB_URL', 'https://hardware.iltuodominio.it', 'User')
+   [Environment]::SetEnvironmentVariable('HARDWARE_HUB_ADMIN_TOKEN', '<token>', 'User')
+   ```
+3. **Usala con prompt in linguaggio naturale**, ad esempio:
+   - *"Aggiungi all'Hardware Hub il Minisforum MS-A2: cerca specifiche e prezzo ufficiale,
+     poi crealo nel catalogo"*
+   - *"Mostrami le statistiche del sito e gli ultimi commenti"*
+   - *"Nascondi il commento 34 del DGX Spark, è spam"*
+   - *"Aggiorna il prezzo del Mac mini M4 prendendolo da apple.com/it"*
+
+### Opzione B — Server MCP (opzionale, per agenti compatibili MCP)
+
+Il server MCP gira **in locale sul tuo PC** (niente da installare sul VPS) e traduce i
+tool MCP in chiamate REST. Setup:
 
 ```bash
 cd mcp-server && npm install
-# nell'agente (es. claude_desktop_config.json):
-#   "hardware-hub": { "command": "node", "args": ["<percorso>/mcp-server/server.mjs"],
-#     "env": { "HARDWARE_HUB_URL": "https://...", "HARDWARE_HUB_ADMIN_TOKEN": "..." } }
 ```
 
-Tool MCP esposti: `list_products`, `create_product`, `update_product`, `delete_product`,
-`list_comments`, `set_comment_visibility`, `delete_comment`.
+Poi configura l'agente:
+
+**Claude Desktop** (`claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "hardware-hub": {
+      "command": "node",
+      "args": ["<percorso-assoluto>/mcp-server/server.mjs"],
+      "env": {
+        "HARDWARE_HUB_URL": "https://hardware.iltuodominio.it",
+        "HARDWARE_HUB_ADMIN_TOKEN": "<token>"
+      }
+    }
+  }
+}
+```
+
+**Kimi CLI** (`.kimi/mcp.json` nel progetto o config utente — stessa struttura):
+```json
+{
+  "mcpServers": {
+    "hardware-hub": {
+      "command": "node",
+      "args": ["<percorso-assoluto>/mcp-server/server.mjs"],
+      "env": {
+        "HARDWARE_HUB_URL": "https://hardware.iltuodominio.it",
+        "HARDWARE_HUB_ADMIN_TOKEN": "<token>"
+      }
+    }
+  }
+}
+```
+
+Tool MCP esposti: `get_stats`, `list_products`, `create_product`, `update_product`,
+`delete_product`, `list_comments`, `set_comment_visibility`, `delete_comment`.
+
+### Regole per gli agenti (già dentro la skill/MCP)
+
+- **Mai inventare prezzi**: se non c'è fonte ufficiale → `price_eur: null` + nota "da verificare"
+- **Mai stampare il token**: va solo nelle variabili d'ambiente / config MCP
+- Le **eliminazioni** sono irreversibili: l'agente deve chiederti conferma prima
+  (i tool MCP `delete_*` hanno descrizioni che lo impongono)
 
 ## 🚀 Installazione sulla VPS — per Simone (o il suo Agente AI)
 

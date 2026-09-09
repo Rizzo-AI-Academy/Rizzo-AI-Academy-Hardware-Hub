@@ -687,3 +687,38 @@ a {
     justify-content: flex-end;
   }
 }
+
+/* ---------- Toolbar admin (ricerca/filtri/ordinamento) ---------- */
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.admin-toolbar input[type='text'] {
+  flex: 1;
+  min-width: 220px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 10px 14px;
+  font-size: 0.92rem;
+}
+
+.admin-toolbar input:focus,
+.admin-toolbar select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.admin-toolbar select {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  max-width: 220px;
+}

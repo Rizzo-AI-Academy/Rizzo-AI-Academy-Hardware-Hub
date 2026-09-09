@@ -1,8 +1,28 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ProductForm from './ProductForm';
+
+const SORTS = {
+  prodotti: [
+    ['categoria', 'Categoria'],
+    ['nome', 'Nome A-Z'],
+    ['prezzo-asc', 'Prezzo ↑'],
+    ['prezzo-desc', 'Prezzo ↓'],
+    ['commenti', 'N° commenti'],
+  ],
+  commenti: [
+    ['recenti', 'Più recenti'],
+    ['vecchi', 'Più vecchi'],
+    ['voto-desc', 'Voto ↓'],
+    ['voto-asc', 'Voto ↑'],
+  ],
+};
+
+function priceValue(hw) {
+  return hw.price_eur == null ? Number.POSITIVE_INFINITY : hw.price_eur;
+}
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -12,6 +32,17 @@ export default function AdminDashboard() {
   const [editing, setEditing] = useState(null);
   const [showNew, setShowNew] = useState(false);
   const [notice, setNotice] = useState('');
+
+  // Filtri prodotti
+  const [pQuery, setPQuery] = useState('');
+  const [pCategory, setPCategory] = useState('Tutte');
+  const [pSort, setPSort] = useState('categoria');
+
+  // Filtri commenti
+  const [cQuery, setCQuery] = useState('');
+  const [cProduct, setCProduct] = useState('Tutti');
+  const [cStatus, setCStatus] = useState('tutti'); // tutti | visibili | nascosti
+  const [cSort, setCSort] = useState('recenti');
 
   const load = useCallback(async () => {
     const [hw, cm] = await Promise.all([
@@ -26,7 +57,55 @@ export default function AdminDashboard() {
     load();
   }, [load]);
 
-  const categories = [...new Set(hardware.map((h) => h.category))].sort();
+  const categories = useMemo(
+    () => [...new Set(hardware.map((h) => h.category))].sort(),
+    [hardware]
+  );
+
+  const filteredProducts = useMemo(() => {
+    const q = pQuery.trim().toLowerCase();
+    const list = hardware.filter((h) => {
+      const matchQuery =
+        !q ||
+        h.name.toLowerCase().includes(q) ||
+        h.brand.toLowerCase().includes(q) ||
+        (h.description || '').toLowerCase().includes(q);
+      const matchCategory = pCategory === 'Tutte' || h.category === pCategory;
+      return matchQuery && matchCategory;
+    });
+    const by = {
+      categoria: (a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name),
+      nome: (a, b) => a.name.localeCompare(b.name),
+      'prezzo-asc': (a, b) => priceValue(a) - priceValue(b),
+      'prezzo-desc': (a, b) => priceValue(b) - priceValue(a),
+      commenti: (a, b) => b.comments_total - a.comments_total,
+    };
+    return [...list].sort(by[pSort]);
+  }, [hardware, pQuery, pCategory, pSort]);
+
+  const filteredComments = useMemo(() => {
+    const q = cQuery.trim().toLowerCase();
+    const list = comments.filter((c) => {
+      const matchQuery =
+        !q ||
+        c.author_name.toLowerCase().includes(q) ||
+        c.text.toLowerCase().includes(q) ||
+        c.hardware_name.toLowerCase().includes(q);
+      const matchProduct = cProduct === 'Tutti' || c.hardware_slug === cProduct;
+      const matchStatus =
+        cStatus === 'tutti' || (cStatus === 'visibili' ? !c.hidden : !!c.hidden);
+      return matchQuery && matchProduct && matchStatus;
+    });
+    const by = {
+      recenti: (a, b) => b.created_at.localeCompare(a.created_at) || b.id - a.id,
+      vecchi: (a, b) => a.created_at.localeCompare(b.created_at) || a.id - b.id,
+      'voto-desc': (a, b) => (b.rating || 0) - (a.rating || 0),
+      'voto-asc': (a, b) => (a.rating || 0) - (b.rating || 0),
+    };
+    return [...list].sort(by[cSort]);
+  }, [comments, cQuery, cProduct, cStatus, cSort]);
+
+  const hiddenCount = comments.filter((c) => c.hidden).length;
 
   async function api(method, url, body) {
     const res = await fetch(url, {
@@ -83,7 +162,7 @@ export default function AdminDashboard() {
       <div className="filters">
         {[
           ['prodotti', `Prodotti (${hardware.length})`],
-          ['commenti', `Commenti (${comments.length})`],
+          ['commenti', `Commenti (${comments.length}${hiddenCount ? `, ${hiddenCount} nascosti` : ''})`],
         ].map(([key, label]) => (
           <button
             key={key}
@@ -103,7 +182,33 @@ export default function AdminDashboard() {
 
       {tab === 'prodotti' && (
         <>
-          {showNew || editing ? (
+          <div className="admin-toolbar">
+            <input
+              type="text"
+              placeholder="Cerca per nome, brand o descrizione…"
+              value={pQuery}
+              onChange={(e) => setPQuery(e.target.value)}
+              aria-label="Cerca prodotti"
+            />
+            <select value={pCategory} onChange={(e) => setPCategory(e.target.value)} aria-label="Filtra per categoria">
+              <option value="Tutte">Tutte le categorie</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <select value={pSort} onChange={(e) => setPSort(e.target.value)} aria-label="Ordina prodotti">
+              {SORTS.prodotti.map(([k, label]) => (
+                <option key={k} value={k}>{label}</option>
+              ))}
+            </select>
+            {!showNew && !editing && (
+              <button className="btn" onClick={() => setShowNew(true)}>
+                + Nuovo prodotto
+              </button>
+            )}
+          </div>
+
+          {(showNew || editing) && (
             <ProductForm
               categories={categories}
               initial={editing}
@@ -117,20 +222,24 @@ export default function AdminDashboard() {
                 setShowNew(false);
               }}
             />
-          ) : (
-            <button className="btn" onClick={() => setShowNew(true)}>
-              + Nuovo prodotto
-            </button>
           )}
 
-          <div className="admin-list">
-            {hardware.map((hw) => (
+          <p className="form-note" style={{ marginTop: 14 }}>
+            {filteredProducts.length} di {hardware.length} prodotti
+          </p>
+          <div className="admin-list" style={{ marginTop: 8 }}>
+            {filteredProducts.length === 0 && (
+              <div className="empty-state">Nessun prodotto corrisponde ai filtri.</div>
+            )}
+            {filteredProducts.map((hw) => (
               <div key={hw.id} className="admin-row">
                 <img src={hw.images?.[0]} alt="" className="admin-thumb" />
                 <div className="admin-row-main">
                   <strong>{hw.name}</strong>
                   <span className="form-note">
-                    {hw.category} · {hw.brand} · {hw.comments_total} commenti
+                    {hw.category} · {hw.brand} ·{' '}
+                    {hw.price_eur != null ? `€${Number(hw.price_eur).toLocaleString('it-IT')}` : 'prezzo da verificare'} ·{' '}
+                    {hw.comments_total} commenti
                     {hw.comments_hidden > 0 && ` (${hw.comments_hidden} nascosti)`} ·{' '}
                     <a href={`/hardware/${hw.slug}`} target="_blank" rel="noopener noreferrer">
                       vedi scheda ↗
@@ -152,33 +261,66 @@ export default function AdminDashboard() {
       )}
 
       {tab === 'commenti' && (
-        <div className="admin-list">
-          {comments.length === 0 && <div className="empty-state">Nessun commento.</div>}
-          {comments.map((c) => (
-            <div key={c.id} className={`admin-row ${c.hidden ? 'admin-row-hidden' : ''}`}>
-              <div className="admin-row-main">
-                <strong>
-                  {c.author_name}
-                  {c.rating ? ` · ${'★'.repeat(c.rating)}` : ''}
-                  {c.hidden ? ' · nascosto' : ''}
-                </strong>
-                <span className="form-note">
-                  su <a href={`/hardware/${c.hardware_slug}`} target="_blank" rel="noopener noreferrer">{c.hardware_name}</a> ·{' '}
-                  {new Date(`${c.created_at}Z`).toLocaleString('it-IT')}
-                </span>
-                <p className="admin-comment-text">{c.text}</p>
+        <>
+          <div className="admin-toolbar">
+            <input
+              type="text"
+              placeholder="Cerca per autore, testo o prodotto…"
+              value={cQuery}
+              onChange={(e) => setCQuery(e.target.value)}
+              aria-label="Cerca commenti"
+            />
+            <select value={cProduct} onChange={(e) => setCProduct(e.target.value)} aria-label="Filtra per prodotto">
+              <option value="Tutti">Tutti i prodotti</option>
+              {hardware.map((h) => (
+                <option key={h.slug} value={h.slug}>{h.name}</option>
+              ))}
+            </select>
+            <select value={cStatus} onChange={(e) => setCStatus(e.target.value)} aria-label="Filtra per stato">
+              <option value="tutti">Visibili + nascosti</option>
+              <option value="visibili">Solo visibili</option>
+              <option value="nascosti">Solo nascosti</option>
+            </select>
+            <select value={cSort} onChange={(e) => setCSort(e.target.value)} aria-label="Ordina commenti">
+              {SORTS.commenti.map(([k, label]) => (
+                <option key={k} value={k}>{label}</option>
+              ))}
+            </select>
+          </div>
+
+          <p className="form-note" style={{ marginTop: 14 }}>
+            {filteredComments.length} di {comments.length} commenti
+          </p>
+          <div className="admin-list" style={{ marginTop: 8 }}>
+            {filteredComments.length === 0 && (
+              <div className="empty-state">Nessun commento corrisponde ai filtri.</div>
+            )}
+            {filteredComments.map((c) => (
+              <div key={c.id} className={`admin-row ${c.hidden ? 'admin-row-hidden' : ''}`}>
+                <div className="admin-row-main">
+                  <strong>
+                    {c.author_name}
+                    {c.rating ? ` · ${'★'.repeat(c.rating)}` : ''}
+                    {c.hidden ? ' · nascosto' : ''}
+                  </strong>
+                  <span className="form-note">
+                    su <a href={`/hardware/${c.hardware_slug}`} target="_blank" rel="noopener noreferrer">{c.hardware_name}</a> ·{' '}
+                    {new Date(`${c.created_at}Z`).toLocaleString('it-IT')}
+                  </span>
+                  <p className="admin-comment-text">{c.text}</p>
+                </div>
+                <div className="admin-row-actions">
+                  <button className="btn btn-outline" onClick={() => toggleComment(c)}>
+                    {c.hidden ? 'Mostra' : 'Nascondi'}
+                  </button>
+                  <button className="btn btn-danger" onClick={() => deleteComment(c)}>
+                    Elimina
+                  </button>
+                </div>
               </div>
-              <div className="admin-row-actions">
-                <button className="btn btn-outline" onClick={() => toggleComment(c)}>
-                  {c.hidden ? 'Mostra' : 'Nascondi'}
-                </button>
-                <button className="btn btn-danger" onClick={() => deleteComment(c)}>
-                  Elimina
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
