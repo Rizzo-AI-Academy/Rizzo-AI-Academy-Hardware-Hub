@@ -326,7 +326,7 @@ a {
 .detail {
   padding: 36px 0;
   display: grid;
-  grid-template-columns: 1.1fr 1fr;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   gap: 36px;
   align-items: start;
 }
@@ -1007,4 +1007,26 @@ a {
     justify-content: flex-start;
     gap: 12px;
   }
+}
+
+/* ---------- Protezione overflow: testi lunghi o senza spazi non rompono il layout ---------- */
+h1,
+h2,
+h3,
+.card-title,
+.card-brand,
+.card-meta,
+.detail-sub,
+.description,
+.spec-table th,
+.spec-table td,
+.comment-author,
+.admin-row-main,
+.admin-comment-text,
+.badge,
+.price,
+.aggiungi-lead {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
