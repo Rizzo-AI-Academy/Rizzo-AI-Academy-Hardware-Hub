@@ -20,6 +20,10 @@ data/
 # Istruzioni interne (non pubblicare)
 Istruzioni.md
 
+# File interni per gli agenti AI (non pubblicare)
+AGENTS.md
+progetto.md
+
 # Log
 *.log
 npm-debug.log*
