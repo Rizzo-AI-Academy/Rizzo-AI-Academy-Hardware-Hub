@@ -1,32 +1,30 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import crypto from 'node:crypto';
+import { isAdmin, passesOriginCheck } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
-function isAuthorized(request) {
-  const token = process.env.ADMIN_TOKEN;
-  if (!token) return false;
-  const auth = request.headers.get('authorization') || '';
-  const provided = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  if (!provided) return false;
-  const a = Buffer.from(provided);
-  const b = Buffer.from(token);
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
+function guard(request, mutation = false) {
+  if (!isAdmin(request)) {
+    return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
+  }
+  if (mutation && !passesOriginCheck(request)) {
+    return NextResponse.json({ error: 'Origin non valida' }, { status: 403 });
+  }
+  return null;
 }
 
 /**
- * Moderazione admin (unica via per nascondere/mostrare commenti).
+ * Moderazione admin.
+ *   GET    /api/admin/comments  → lista completa (inclusi nascosti)
+ *   PATCH  /api/admin/comments  → { id, hidden } nasconde/mostra
+ *   DELETE /api/admin/comments  → { id } elimina definitivamente
  *
- *   GET   /api/admin/comments            → lista completa (inclusi nascosti)
- *   PATCH /api/admin/comments            → { id, hidden } nasconde/mostra
- *
- * Header obbligatorio: Authorization: Bearer <ADMIN_TOKEN>
+ * Auth: Bearer <ADMIN_TOKEN> oppure cookie di sessione della dashboard.
  */
 export async function GET(request) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
-  }
+  const denied = guard(request);
+  if (denied) return denied;
   const db = getDb();
   const comments = db
     .prepare(
@@ -40,9 +38,8 @@ export async function GET(request) {
 }
 
 export async function PATCH(request) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
-  }
+  const denied = guard(request, true);
+  if (denied) return denied;
   let body;
   try {
     body = await request.json();
@@ -60,4 +57,25 @@ export async function PATCH(request) {
     return NextResponse.json({ error: 'Commento non trovato' }, { status: 404 });
   }
   return NextResponse.json({ ok: true, id, hidden });
+}
+
+export async function DELETE(request) {
+  const denied = guard(request, true);
+  if (denied) return denied;
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Richiesta non valida' }, { status: 400 });
+  }
+  const id = Number(body.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return NextResponse.json({ error: 'ID commento non valido' }, { status: 400 });
+  }
+  const db = getDb();
+  const result = db.prepare('DELETE FROM comments WHERE id = ?').run(id);
+  if (result.changes === 0) {
+    return NextResponse.json({ error: 'Commento non trovato' }, { status: 404 });
+  }
+  return NextResponse.json({ ok: true, id });
 }

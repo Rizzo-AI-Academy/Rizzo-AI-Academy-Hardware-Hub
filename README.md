@@ -15,8 +15,8 @@ nessun edit/delete lato pubblico, quindi nessuno può cancellare i commenti degl
 - **Commenti senza login**: nome + testo + voto opzionale 1-5 stelle, più recenti prima
 - **Anti-abuso**: rate limit per IP (max 2 commenti / 30 sec per hardware), honeypot anti-bot,
   sanitizzazione input + escaping output (anti-XSS), header di sicurezza
-- **Moderazione admin**: endpoint protetto da token per nascondere/mostrare commenti
-  (i commenti non vengono mai cancellati dal DB, solo nascosti)
+- **Moderazione admin**: dashboard web a `/admin` + endpoint protetti da token per gestire
+  prodotti (crea/modifica/elimina) e commenti (nascondi/mostra/elimina)
 - Tema dark, responsive mobile-first, tutto in italiano
 
 ## Stack
@@ -83,8 +83,15 @@ periodici** (basta copiare il file ad app ferma, oppure usa `sqlite3 ... ".backu
 | POST   | `/api/hardware/:slug/comments`       | Nuovo commento (nome, testo, voto opzionale)   |
 | GET    | `/api/admin/comments` 🔒             | Lista completa (inclusi nascosti)              |
 | PATCH  | `/api/admin/comments` 🔒             | `{ "id": N, "hidden": true/false }`            |
+| DELETE | `/api/admin/comments` 🔒             | `{ "id": N }` elimina definitivamente          |
+| GET    | `/api/admin/hardware` 🔒             | Lista prodotti con conteggi commenti           |
+| POST   | `/api/admin/hardware` 🔒             | Crea prodotto (immagine auto o da `image_url`) |
+| PATCH  | `/api/admin/hardware/:id` 🔒         | Modifica i campi forniti                       |
+| DELETE | `/api/admin/hardware/:id` 🔒         | Elimina prodotto + suoi commenti               |
+| POST   | `/api/admin/login`                   | Login dashboard (token → cookie), rate limited |
+| POST   | `/api/admin/logout`                  | Logout dashboard                               |
 
-🔒 = richiede header `Authorization: Bearer <ADMIN_TOKEN>`
+🔒 = `Authorization: Bearer <ADMIN_TOKEN>` oppure cookie di sessione della dashboard.
 
 ### Esempio moderazione
 
@@ -94,6 +101,42 @@ curl -X PATCH http://localhost:3000/api/admin/comments \
   -H "Content-Type: application/json" \
   -d '{"id": 42, "hidden": true}'
 ```
+
+## Dashboard admin (`/admin`)
+
+L'URL `/admin` è raggiungibile da chiunque, ma **protetto da password**: serve il
+`ADMIN_TOKEN` (condividilo solo con chi gestisce il sito, es. tu e Simone). Dopo il login
+viene impostato un cookie firmato (HttpOnly, 7 giorni); il login è rate-limited
+(5 tentativi/min per IP) contro il brute force.
+
+Dalla dashboard puoi:
+
+- **Prodotti**: creare (nome, categoria, prezzo, specifiche, link d'acquisto, immagine da
+  URL ufficiale o placeholder automatico), modificare, eliminare (con i suoi commenti)
+- **Commenti**: vedere tutti (anche nascosti), nascondere/mostrare, eliminare
+
+Tutto funziona via HTTPS pubblico: **non serve accesso SSH alla VPS** per gestire il sito.
+
+## Gestione da agenti AI (Skill o MCP)
+
+Il sito è gestibile interamente da un agente AI remoto, in due modi:
+
+1. **Skill (consigliata, universale)** — `skills/hardware-hub-admin/SKILL.md`:
+   istruzioni pronte per qualsiasi agente (Kimi, Claude, ecc.) per chiamare le API REST
+   con `curl`. Configura le variabili `HARDWARE_HUB_URL` e `HARDWARE_HUB_ADMIN_TOKEN`
+   nell'ambiente dell'agente (mai nei prompt: vedi la Regola Zero in AGENTS.md).
+2. **Server MCP (opzionale)** — `mcp-server/`: gira **in locale** sulla macchina
+   dell'agente e parla con le API pubbliche. Setup:
+
+```bash
+cd mcp-server && npm install
+# nell'agente (es. claude_desktop_config.json):
+#   "hardware-hub": { "command": "node", "args": ["<percorso>/mcp-server/server.mjs"],
+#     "env": { "HARDWARE_HUB_URL": "https://...", "HARDWARE_HUB_ADMIN_TOKEN": "..." } }
+```
+
+Tool MCP esposti: `list_products`, `create_product`, `update_product`, `delete_product`,
+`list_comments`, `set_comment_visibility`, `delete_comment`.
 
 ## Pubblicazione su VPS Ubuntu (passo-passo)
 
@@ -179,11 +222,14 @@ I file locali non si rompono mai (niente hotlink).
 app/                    # Next.js App Router
   page.jsx              # home: catalogo con filtri
   hardware/[slug]/      # scheda prodotto + commenti
+  admin/                # dashboard admin (protetta da token)
   api/hardware/...      # API pubbliche
-  api/admin/comments/   # moderazione (Bearer ADMIN_TOKEN)
-  components/           # Card, Catalogo, Form commenti, Galleria, Stelle
-lib/                    # db.js (SQLite), rate-limit.js, security.js
+  api/admin/...         # CRUD prodotti + moderazione (token o cookie)
+  components/           # Card, Catalogo, Form commenti, Galleria, Stelle, Admin*
+lib/                    # db.js (SQLite), rate-limit.js, security.js, admin-auth.js, placeholder.mjs
 scripts/                # seed.mjs (+ seed-data.mjs), ensure-db.mjs
+skills/                 # SKILL.md per agenti AI (gestione via REST)
+mcp-server/             # server MCP opzionale (stdio, gira in locale all'agente)
 public/hardware-images/ # immagini locali dei prodotti
 data/                   # file SQLite (gitignored)
 ```
