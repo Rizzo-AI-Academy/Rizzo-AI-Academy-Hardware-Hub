@@ -1,0 +1,21 @@
+{
+  "name": "rizzo-ai-academy-hardware-hub",
+  "version": "1.0.0",
+  "description": "Catalogo community-driven di hardware per AI — Rizzo AI Academy",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/ensure-db.mjs && next dev",
+    "build": "next build",
+    "start": "node scripts/ensure-db.mjs && next start",
+    "seed": "node scripts/seed.mjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.2.0",
+    "next": "^15.5.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

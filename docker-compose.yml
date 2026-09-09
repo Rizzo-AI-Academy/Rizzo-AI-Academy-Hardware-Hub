@@ -1,0 +1,17 @@
+services:
+  hardware-hub:
+    build: .
+    container_name: hardware-hub
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      # Dentro il container il DB vive in /app/data (volume persistente)
+      DATABASE_PATH: /app/data/hardware-hub.db
+    volumes:
+      - hardware-hub-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  hardware-hub-data:

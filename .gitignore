@@ -1,0 +1,38 @@
+# Dipendenze e build
+node_modules/
+.next/
+out/
+build/
+
+# Database locale e dati runtime
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Segreti e ambiente
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Istruzioni interne (non pubblicare)
+Istruzioni.md
+
+# Log
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Immagini scaricate dal seed (rigenerabili con `npm run seed`)
+public/hardware-images/*.jpg
+public/hardware-images/*.jpeg
+public/hardware-images/*.png
+public/hardware-images/*.webp
+
+# Test artifact
+.playwright-mcp/
