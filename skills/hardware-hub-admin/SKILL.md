@@ -102,6 +102,26 @@ curl -s -X DELETE "$HARDWARE_HUB_URL/api/admin/comments" \
 2. `POST /api/admin/hardware` con i dati raccolti.
 3. Verifica pubblica: `GET $HARDWARE_HUB_URL/api/hardware/<slug>` → scheda online.
 
+## Log trappola anti-bot
+
+Il sito ha path-esca (`/.env`, `/.git`, `/wp-admin`, finto `/api/internal/export`) che loggano
+IP, user agent e header di bot/scanner/agenti malevoli. Per consultarli:
+
+```bash
+# ultimi 200 accessi sospetti
+curl -s "$HARDWARE_HUB_URL/api/admin/trap-logs" -H "Authorization: Bearer $HARDWARE_HUB_ADMIN_TOKEN"
+
+# filtra per IP
+curl -s "$HARDWARE_HUB_URL/api/admin/trap-logs?ip=1.2.3.4" -H "Authorization: Bearer $HARDWARE_HUB_ADMIN_TOKEN"
+
+# svuota i log (chiedi conferma all'utente)
+curl -s -X DELETE "$HARDWARE_HUB_URL/api/admin/trap-logs" \
+  -H "Authorization: Bearer $HARDWARE_HUB_ADMIN_TOKEN" -H "Content-Type: application/json" -d '{}'
+```
+
+Nota: i commenti pubblici richiedono il captcha "Non sono un robot" (`POST /api/hardware/:slug/comments`
+senza `captcha_token` valido → 400). Gli endpoint admin non lo richiedono.
+
 ## Errori tipici
 
 | Codice | Significato |

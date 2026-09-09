@@ -117,6 +117,15 @@ server.tool(
 );
 
 server.tool(
+  'list_trap_logs',
+  'Elenca gli accessi sospetti intercettati dalla trappola anti-bot (IP, path, user agent). Utile per capire chi sta scansionando il sito',
+  {
+    ip: z.string().optional().describe('Filtra per IP specifico'),
+  },
+  async ({ ip }) => ok(await api('GET', `/api/admin/trap-logs${ip ? `?ip=${encodeURIComponent(ip)}` : ''}`))
+);
+
+server.tool(
   'list_comments',
   'Elenca tutti i commenti del sito, inclusi quelli nascosti, dal più recente',
   {},

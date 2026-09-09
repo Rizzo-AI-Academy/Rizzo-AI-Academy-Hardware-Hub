@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Captcha from './Captcha';
 
 export default function CommentForm({ slug }) {
   const router = useRouter();
@@ -9,8 +10,14 @@ export default function CommentForm({ slug }) {
   const [text, setText] = useState('');
   const [rating, setRating] = useState(0);
   const [website, setWebsite] = useState(''); // honeypot
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const [captchaChecked, setCaptchaChecked] = useState(false);
+  const [captchaReset, setCaptchaReset] = useState(0);
   const [status, setStatus] = useState({ type: '', message: '' });
   const [sending, setSending] = useState(false);
+
+  const onCaptchaToken = useCallback((token) => setCaptchaToken(token), []);
+  const onCaptchaChecked = useCallback((checked) => setCaptchaChecked(checked), []);
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -25,6 +32,7 @@ export default function CommentForm({ slug }) {
           text,
           rating: rating || null,
           website,
+          captcha_token: captchaToken,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -34,6 +42,8 @@ export default function CommentForm({ slug }) {
       }
       setText('');
       setRating(0);
+      setCaptchaChecked(false);
+      setCaptchaReset((k) => k + 1); // nuova challenge: uso singolo
       setStatus({ type: 'success', message: 'Commento pubblicato. Grazie!' });
       router.refresh();
     } catch {
@@ -73,6 +83,7 @@ export default function CommentForm({ slug }) {
         autoComplete="off"
         aria-hidden="true"
       />
+      <Captcha onToken={onCaptchaToken} onCheckedChange={onCaptchaChecked} resetKey={captchaReset} />
       <div className="form-row">
         <div>
           <div className="stars-input" role="radiogroup" aria-label="Voto da 1 a 5 stelle">
@@ -90,7 +101,7 @@ export default function CommentForm({ slug }) {
           </div>
           <span className="form-note">Voto facoltativo · I commenti si possono solo aggiungere</span>
         </div>
-        <button className="btn" type="submit" disabled={sending}>
+        <button className="btn" type="submit" disabled={sending || !captchaChecked}>
           {sending ? 'Invio…' : 'Pubblica commento'}
         </button>
       </div>

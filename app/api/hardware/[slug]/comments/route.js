@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getDb, getHardwareBySlug, listComments } from '@/lib/db';
 import { rateLimit } from '@/lib/rate-limit';
 import { clientIp, hashIp, sanitizeRating, sanitizeText } from '@/lib/security';
+import { verifyCaptcha } from '@/lib/captcha';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,12 @@ export async function POST(request, { params }) {
   // Ai bot rispondiamo "ok" ma scartiamo silenziosamente il commento.
   if (body.website) {
     return NextResponse.json({ ok: true }, { status: 201 });
+  }
+
+  // CAPTCHA "Non sono un robot": obbligatorio per i commenti pubblici.
+  const captcha = verifyCaptcha(body.captcha_token);
+  if (!captcha.ok) {
+    return NextResponse.json({ error: captcha.error }, { status: 400 });
   }
 
   const ip = clientIp(request);

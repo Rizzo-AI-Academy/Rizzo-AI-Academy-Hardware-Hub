@@ -44,13 +44,21 @@ export default function AdminDashboard() {
   const [cStatus, setCStatus] = useState('tutti'); // tutti | visibili | nascosti
   const [cSort, setCSort] = useState('recenti');
 
+  // Log trappola anti-bot
+  const [trapLogs, setTrapLogs] = useState([]);
+  const [trapTotal, setTrapTotal] = useState(0);
+  const [tQuery, setTQuery] = useState('');
+
   const load = useCallback(async () => {
-    const [hw, cm] = await Promise.all([
+    const [hw, cm, tl] = await Promise.all([
       fetch('/api/admin/hardware').then((r) => r.json()),
       fetch('/api/admin/comments').then((r) => r.json()),
+      fetch('/api/admin/trap-logs').then((r) => r.json()),
     ]);
     setHardware(hw.hardware || []);
     setComments(cm.comments || []);
+    setTrapLogs(tl.logs || []);
+    setTrapTotal(tl.total || 0);
   }, []);
 
   useEffect(() => {
@@ -106,6 +114,26 @@ export default function AdminDashboard() {
   }, [comments, cQuery, cProduct, cStatus, cSort]);
 
   const hiddenCount = comments.filter((c) => c.hidden).length;
+
+  const filteredTraps = useMemo(() => {
+    const q = tQuery.trim().toLowerCase();
+    if (!q) return trapLogs;
+    return trapLogs.filter(
+      (l) =>
+        l.ip.includes(q) ||
+        l.path.toLowerCase().includes(q) ||
+        l.user_agent.toLowerCase().includes(q)
+    );
+  }, [trapLogs, tQuery]);
+
+  async function clearTrapLogs() {
+    if (!confirm(`Eliminare tutti i ${trapTotal} log della trappola?`)) return;
+    const res = await fetch('/api/admin/trap-logs', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    if (res.ok) {
+      setNotice('Log trappola svuotati.');
+      load();
+    }
+  }
 
   async function api(method, url, body) {
     const res = await fetch(url, {
@@ -163,6 +191,7 @@ export default function AdminDashboard() {
         {[
           ['prodotti', `Prodotti (${hardware.length})`],
           ['commenti', `Commenti (${comments.length}${hiddenCount ? `, ${hiddenCount} nascosti` : ''})`],
+          ['trappola', `Trappola 🪤 (${trapTotal})`],
         ].map(([key, label]) => (
           <button
             key={key}
@@ -316,6 +345,49 @@ export default function AdminDashboard() {
                   <button className="btn btn-danger" onClick={() => deleteComment(c)}>
                     Elimina
                   </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      {tab === 'trappola' && (
+        <>
+          <div className="admin-toolbar">
+            <input
+              type="text"
+              placeholder="Filtra per IP, path o user agent…"
+              value={tQuery}
+              onChange={(e) => setTQuery(e.target.value)}
+              aria-label="Filtra log trappola"
+            />
+            {trapTotal > 0 && (
+              <button className="btn btn-danger" onClick={clearTrapLogs}>
+                Svuota log
+              </button>
+            )}
+          </div>
+          <p className="form-note" style={{ marginTop: 14 }}>
+            Accessi sospetti intercettati dalla trappola (path-esca tipo <code>/.env</code>,{' '}
+            <code>/.git</code>, <code>/wp-admin</code>, finto export di debug). Mostrati gli ultimi 200 di{' '}
+            {trapTotal}.
+          </p>
+          <div className="admin-list" style={{ marginTop: 8 }}>
+            {filteredTraps.length === 0 && (
+              <div className="empty-state">
+                Nessun accesso sospetto intercettato finora. Ottimo segno 🎉
+              </div>
+            )}
+            {filteredTraps.map((l) => (
+              <div key={l.id} className="admin-row">
+                <div className="admin-row-main">
+                  <strong>
+                    {l.ip} <span className="badge">{l.method}</span> <code>{l.path}</code>
+                  </strong>
+                  <span className="form-note">
+                    {new Date(`${l.created_at}Z`).toLocaleString('it-IT')} · {l.user_agent || 'user-agent assente'}
+                  </span>
+                  {l.body && <p className="admin-comment-text">{l.body}</p>}
                 </div>
               </div>
             ))}

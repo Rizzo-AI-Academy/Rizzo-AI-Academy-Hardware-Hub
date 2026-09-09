@@ -13,8 +13,12 @@ nessun edit/delete lato pubblico, quindi nessuno può cancellare i commenti degl
 - **Scheda prodotto**: galleria, tabella specifiche (CPU, RAM, GPU/NPU, TOPS AI, storage, consumo, OS),
   prezzo indicativo, link "Dove comprarlo", descrizione
 - **Commenti senza login**: nome + testo + voto opzionale 1-5 stelle, più recenti prima
-- **Anti-abuso**: rate limit per IP (max 2 commenti / 30 sec per hardware), honeypot anti-bot,
-  sanitizzazione input + escaping output (anti-XSS), header di sicurezza
+- **Anti-abuso**: captcha self-hosted "Non sono un robot" (challenge firmata HMAC, uso singolo,
+  tempo minimo umano — nessun servizio esterno), rate limit per IP (max 2 commenti / 30 sec per
+  hardware), honeypot anti-bot, sanitizzazione input + escaping output (anti-XSS), header di sicurezza
+- **Trappola anti-bot 🪤**: path-esca (`/.env`, `/.git`, `/wp-admin`, un finto `/api/internal/export`
+  "dimenticato") che loggano IP reale, user agent, header e body di chi li tocca. Consultabili
+  dalla dashboard (tab "Trappola") e via API/MCP.
 - **Moderazione admin**: dashboard web a `/admin` + endpoint protetti da token per gestire
   prodotti (crea/modifica/elimina) e commenti (nascondi/mostra/elimina)
 - Tema dark, responsive mobile-first, tutto in italiano
@@ -93,6 +97,9 @@ periodici** (basta copiare il file ad app ferma, oppure usa `sqlite3 ... ".backu
 | PATCH  | `/api/admin/hardware/:id` 🔒         | Modifica i campi forniti                       |
 | DELETE | `/api/admin/hardware/:id` 🔒         | Elimina prodotto + suoi commenti               |
 | GET    | `/api/admin/stats` 🔒                | Metriche: prodotti, commenti, top rated        |
+| GET    | `/api/admin/trap-logs` 🔒            | Log trappola anti-bot (`?ip=` per filtrare)    |
+| DELETE | `/api/admin/trap-logs` 🔒            | `{ "id": N }` o `{}` = svuota tutto            |
+| GET    | `/api/captcha`                       | Emette challenge captcha (rate limited)        |
 | POST   | `/api/admin/login`                   | Login dashboard (token → cookie), rate limited |
 | POST   | `/api/admin/logout`                  | Logout dashboard                               |
 
@@ -117,8 +124,30 @@ viene impostato un cookie firmato (HttpOnly, 7 giorni); il login è rate-limited
 Dalla dashboard puoi:
 
 - **Prodotti**: creare (nome, categoria, prezzo, specifiche, link d'acquisto, immagine da
-  URL ufficiale o placeholder automatico), modificare, eliminare (con i suoi commenti)
-- **Commenti**: vedere tutti (anche nascosti), nascondere/mostrare, eliminare
+  URL ufficiale o placeholder automatico), modificare, eliminare (con i suoi commenti).
+  Ricerca, filtro per categoria e ordinamento (nome/prezzo/commenti).
+- **Commenti**: vedere tutti (anche nascosti), nascondere/mostrare, eliminare.
+  Ricerca per autore/testo/prodotto, filtri per prodotto e stato.
+- **Trappola 🪤**: log degli accessi sospetti (IP, path, user agent) con filtro e svuotamento.
+
+## Anti-bot: captcha e trappola
+
+**Captcha "Non sono un robot"** (self-hosted, richiesta di Simone): prima di inviare un
+commento l'utente spunta la casella. Il server emette una challenge firmata HMAC
+(`GET /api/captcha`), valida all'invio per: firma, scadenza 10 minuti, tempo minimo umano
+(1,5s) e **uso singolo**. Senza captcha valida il commento viene rifiutato (400).
+Vale solo per i commenti pubblici: le API admin/agenti non lo richiedono.
+Zero configurazione: nessuna chiave esterna da registrare.
+
+**Trappola anti-bot**: i path tipici degli scanner (`/.env`, `/.git/*`, `/wp-admin`,
+`/xmlrpc.php`, `/phpmyadmin`, …) e un finto endpoint "dimenticato" (`/api/internal/export`)
+non esistono davvero: chi li tocca viene **loggato** (IP reale, metodo, path, user agent,
+header — esclusi cookie/token —, estratto body) nella tabella `trap_logs`, ricevendo in
+cambio contenuti-esca plausibili. I log si consultano dalla dashboard (tab Trappola),
+via REST (`GET /api/admin/trap-logs`) o via MCP (`list_trap_logs`).
+
+> Nota privacy: gli IP in `trap_logs` riguardano solo chi sonda path inesistenti/riservati
+> (traffico quasi certamente automatizzato). Cita la cosa nella privacy policy del sito.
 
 Tutto funziona via HTTPS pubblico: **non serve accesso SSH alla VPS** per gestire il sito.
 
@@ -133,6 +162,7 @@ l'agente chiama le API admin via HTTPS usando URL pubblico + token admin.
 | Funzione | Via REST (Skill) | Tool MCP |
 | --- | --- | --- |
 | Metriche sito (prodotti, commenti, categorie, top rated) | `GET /api/admin/stats` | `get_stats` |
+| Log trappola anti-bot (IP/UA degli scanner) | `GET /api/admin/trap-logs` | `list_trap_logs` |
 | Elencare prodotti (con conteggi commenti) | `GET /api/admin/hardware` | `list_products` |
 | Creare un prodotto (con ricerca fonti e placeholder immagine) | `POST /api/admin/hardware` | `create_product` |
 | Modificare un prodotto (prezzo, spec, descrizione…) | `PATCH /api/admin/hardware/:id` | `update_product` |
