@@ -1,5 +1,5 @@
 // Seed del catalogo: popola la tabella hardware e genera le immagini locali.
-// - Se un prodotto ha `image_urls` (fonti ufficiali), le scarica in public/hardware-images.
+// - Se un prodotto ha `image_urls` (fonti ufficiali), le scarica in data/images.
 // - Se il download fallisce (o non ci sono URL), genera un placeholder SVG locale:
 //   gli hotlink dai siti ufficiali si rompono, i file locali no.
 //
@@ -14,7 +14,9 @@ import { PRODUCTS } from './seed-data.mjs';
 
 const root = process.cwd();
 const dbPath = process.env.DATABASE_PATH || path.join(root, 'data', 'hardware-hub.db');
-const imagesDir = path.join(root, 'public', 'hardware-images');
+// Le immagini vivono accanto al DB (data/images) e sono servite da /api/images/<file>:
+// public/ in produzione serve solo i file presenti al build.
+const imagesDir = path.join(path.dirname(dbPath), 'images');
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 fs.mkdirSync(imagesDir, { recursive: true });
 
@@ -93,7 +95,7 @@ for (const product of PRODUCTS) {
     const file = `${product.slug}-${i + 1}${['.jpg', '.jpeg', '.png', '.webp'].includes(ext) ? ext : '.jpg'}`;
     const dest = path.join(imagesDir, file);
     if (fs.existsSync(dest) || (await tryDownload(remoteUrls[i], dest))) {
-      images.push(`/hardware-images/${file}`);
+      images.push(`/api/images/${file}`);
     } else {
       console.warn(`  ⚠ download fallito per ${product.slug} (${remoteUrls[i]}), uso placeholder`);
     }
@@ -101,7 +103,7 @@ for (const product of PRODUCTS) {
   if (images.length === 0) {
     const file = `${product.slug}.svg`;
     fs.writeFileSync(path.join(imagesDir, file), placeholderSvg(product));
-    images.push(`/hardware-images/${file}`);
+    images.push(`/api/images/${file}`);
   }
 
   // 2) Upsert prodotto (i commenti non vengono toccati).

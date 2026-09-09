@@ -4,7 +4,7 @@ node_modules/
 out/
 build/
 
-# Database locale e dati runtime
+# Database locale e dati runtime (incluse le immagini prodotto in data/images)
 data/
 *.db
 *.db-journal
@@ -28,11 +28,6 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Immagini scaricate dal seed (rigenerabili con `npm run seed`)
-public/hardware-images/*.jpg
-public/hardware-images/*.jpeg
-public/hardware-images/*.png
-public/hardware-images/*.webp
 
 # Test artifact
 .playwright-mcp/

@@ -38,6 +38,23 @@ async function api(method, path, body) {
   return data;
 }
 
+// Upload multipart (immagini): niente Content-Type manuale, lo mette fetch col boundary.
+async function apiUpload(path, filePath) {
+  const { readFile } = await import('node:fs/promises');
+  const buf = await readFile(filePath);
+  const name = filePath.split(/[\\/]/).pop();
+  const form = new FormData();
+  form.append('image', new Blob([buf]), name);
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${TOKEN}` },
+    body: form,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
 const ok = (data) => ({ content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] });
 
 const specsSchema = z
@@ -100,6 +117,28 @@ server.tool(
     image_url: z.string().optional().describe('URL nuova immagine, oppure "" per rigenerare il placeholder'),
   },
   async ({ id, ...fields }) => ok(await api('PATCH', `/api/admin/hardware/${id}`, fields))
+);
+
+server.tool(
+  'approve_product',
+  'Approva o ritira un prodotto inviato dagli utenti (coda di moderazione: approved=false non è visibile al pubblico finché non viene approvato)',
+  {
+    id: z.number().int().positive(),
+    approved: z.boolean().describe('true = pubblica nel catalogo, false = rimetti in coda'),
+  },
+  async (input) => ok(await api('PATCH', `/api/admin/hardware/${input.id}`, { approved: input.approved }))
+);
+
+server.tool(
+  'upload_product_image',
+  'Carica un\'immagine locale (file png/jpeg/webp max 5MB) come immagine di un prodotto esistente. Per scaricare da un URL remoto usa invece update_product con image_url.',
+  {
+    id: z.number().int().positive(),
+    image_path: z
+      .string()
+      .describe('Percorso assoluto del file immagine sulla macchina locale, es. C:/temp/mac-mini.jpg'),
+  },
+  async ({ id, image_path }) => ok(await apiUpload(`/api/admin/hardware/${id}/image`, image_path))
 );
 
 server.tool(

@@ -37,14 +37,6 @@ export async function POST(request, { params }) {
   }
 
   const ip = clientIp(request);
-  const { allowed, retryAfterSec } = rateLimit(`comment:${ip}:${hardware.id}`, RATE_LIMIT, RATE_WINDOW_MS);
-  if (!allowed) {
-    return NextResponse.json(
-      { error: `Stai commentando troppo in fretta: riprova tra ${retryAfterSec} secondi.` },
-      { status: 429, headers: { 'Retry-After': String(retryAfterSec) } }
-    );
-  }
-
   const authorName = sanitizeText(body.author_name, 60);
   const text = sanitizeText(body.text, 2000);
   const rating = sanitizeRating(body.rating);
@@ -57,6 +49,15 @@ export async function POST(request, { params }) {
   }
   if (body.rating != null && body.rating !== '' && rating === null) {
     return NextResponse.json({ error: 'Il voto deve essere tra 1 e 5 stelle.' }, { status: 400 });
+  }
+
+  // Rate limit DOPO la validazione: gli errori (captcha, campi mancanti) non consumano quota.
+  const { allowed, retryAfterSec } = rateLimit(`comment:${ip}:${hardware.id}`, RATE_LIMIT, RATE_WINDOW_MS);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: `Stai commentando troppo in fretta: riprova tra ${retryAfterSec} secondi.` },
+      { status: 429, headers: { 'Retry-After': String(retryAfterSec) } }
+    );
   }
 
   const db = getDb();

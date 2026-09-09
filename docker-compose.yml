@@ -10,6 +10,7 @@ services:
       # Dentro il container il DB vive in /app/data (volume persistente)
       DATABASE_PATH: /app/data/hardware-hub.db
     volumes:
+      # DB SQLite + immagini prodotti (data/images) persistono tra rebuild e restart
       - hardware-hub-data:/app/data
     restart: unless-stopped
 

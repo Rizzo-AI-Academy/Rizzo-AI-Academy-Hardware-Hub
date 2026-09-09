@@ -38,15 +38,6 @@ export async function POST(request) {
     return NextResponse.json({ ok: true }, { status: 201 });
   }
 
-  const ip = clientIp(request);
-  const { allowed, retryAfterSec } = rateLimit(`submit-hw:${ip}`, SUBMIT_LIMIT, SUBMIT_WINDOW_MS);
-  if (!allowed) {
-    return NextResponse.json(
-      { error: 'Hai inviato troppi prodotti di recente: riprova più tardi.' },
-      { status: 429, headers: { 'Retry-After': String(retryAfterSec) } }
-    );
-  }
-
   const captcha = verifyCaptcha(body.captcha);
   if (!captcha.ok) {
     return NextResponse.json({ error: captcha.error }, { status: 400 });
@@ -79,6 +70,18 @@ export async function POST(request) {
     );
   }
 
+  // Rate limit DOPO tutte le validazioni: i tentativi falliti (errori di validazione,
+  // duplicati, captcha errato) NON consumano quota. Conta solo l'inserimento riuscito.
+  const ip = clientIp(request);
+  const key = `submit-hw:${ip}`;
+  const peek = rateLimit(key, SUBMIT_LIMIT, SUBMIT_WINDOW_MS, { increment: false });
+  if (!peek.allowed) {
+    return NextResponse.json(
+      { error: 'Hai già inviato diversi prodotti: riprova più tardi.' },
+      { status: 429, headers: { 'Retry-After': String(peek.retryAfterSec) } }
+    );
+  }
+
   // Niente download da URL forniti dagli utenti (rischio SSRF): placeholder locale automatico.
   const images = await ensureLocalImage(
     { slug, name: data.name, brand: data.brand, category: data.category },
@@ -102,6 +105,9 @@ export async function POST(request) {
       JSON.stringify(images),
       JSON.stringify(data.buy_links ?? [])
     );
+
+  // Inserimento riuscito: ora consumiamo la quota.
+  rateLimit(key, SUBMIT_LIMIT, SUBMIT_WINDOW_MS);
 
   const created = parseHardware(
     db.prepare('SELECT * FROM hardware WHERE id = ?').get(result.lastInsertRowid)

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 export default function Gallery({ images, name }) {
-  const list = images?.length ? images : ['/hardware-images/placeholder.svg'];
+  const list = images?.length ? images : ['/placeholder.svg'];
   const [active, setActive] = useState(0);
   return (
     <div className="detail-gallery">

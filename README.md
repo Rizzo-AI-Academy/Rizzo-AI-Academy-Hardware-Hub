@@ -65,8 +65,11 @@ docker compose up -d --build
 ```
 
 L'app è su `http://localhost:3000`. Il database SQLite vive nel volume Docker
-`hardware-hub-data` (montato su `/app/data` nel container): i dati **sopravvivono**
-a rebuild e restart. Il seed è idempotente e gira a ogni avvio (non cancella i commenti).
+`hardware-hub-data` (montato su `/app/data` nel container); nella stessa directory
+(`data/images/`) vivono le immagini dei prodotti, servite dalla rotta `/api/images/<file>`
+(in produzione `public/` serve solo i file presenti al build: per questo le immagini
+scritte a runtime stanno accanto al DB). Tutto **sopravvive** a rebuild e restart.
+Il seed è idempotente e gira a ogni avvio (non cancella i commenti).
 
 ### Alternativa: Node 20 + pm2
 
@@ -106,6 +109,7 @@ periodici** (basta copiare il file ad app ferma, oppure usa `sqlite3 ... ".backu
 | GET    | `/api/admin/hardware` 🔒             | Lista prodotti con conteggi commenti           |
 | POST   | `/api/admin/hardware` 🔒             | Crea prodotto (immagine auto o da `image_url`) |
 | PATCH  | `/api/admin/hardware/:id` 🔒         | Modifica campi; `{ "approved": bool }` approva |
+| POST   | `/api/admin/hardware/:id/image` 🔒   | Upload immagine (multipart, png/jpg/webp ≤5MB) |
 | DELETE | `/api/admin/hardware/:id` 🔒         | Elimina prodotto + suoi commenti               |
 | GET    | `/api/admin/stats` 🔒                | Metriche: prodotti, commenti, top rated        |
 | GET    | `/api/admin/trap-logs` 🔒            | Log trappola anti-bot (`?ip=` per filtrare)    |
@@ -502,25 +506,28 @@ docker run --rm -v hardware-hub-data:/data -v $(pwd):/backup alpine \
 
 ## Immagini dei prodotti
 
-Il seed scarica le immagini in `public/hardware-images` quando il prodotto ha URL
+Il seed scarica le immagini in `data/images/` quando il prodotto ha URL
 immagine configurati in `scripts/seed-data.mjs` (campo `image_urls`); se il download
 fallisce genera automaticamente un **placeholder SVG locale** con nome e brand.
-I file locali non si rompono mai (niente hotlink).
+Le immagini sono servite da `/api/images/<file>` e persistono nel volume dati
+(niente hotlink, niente file persi al rebuild).
 
 ## Struttura
 
 ```
 app/                    # Next.js App Router
-  page.jsx              # home: catalogo con filtri
-  hardware/[slug]/      # scheda prodotto + commenti
+  (hub)/page.jsx        # home: catalogo con filtri
+  (hub)/hardware/[slug]/ # scheda prodotto + commenti
+  aggiungi/             # form pubblico "Aggiungi un PC"
   admin/                # dashboard admin (protetta da token)
   api/hardware/...      # API pubbliche
+  api/images/[name]     # serve le immagini prodotto da data/images
   api/admin/...         # CRUD prodotti + moderazione (token o cookie)
   components/           # Card, Catalogo, Form commenti, Galleria, Stelle, Admin*
 lib/                    # db.js (SQLite), rate-limit.js, security.js, admin-auth.js, placeholder.mjs
 scripts/                # seed.mjs (+ seed-data.mjs), ensure-db.mjs
 skills/                 # SKILL.md per agenti AI (gestione via REST)
 mcp-server/             # server MCP opzionale (stdio, gira in locale all'agente)
-public/hardware-images/ # immagini locali dei prodotti
-data/                   # file SQLite (gitignored)
+public/               # asset statici al build (logo brand, font, placeholder generico)
+data/                 # file SQLite + images/ prodotti (gitignored, volume Docker)
 ```

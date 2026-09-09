@@ -12,7 +12,7 @@ export function formatPrice(hw) {
 }
 
 export default function HardwareCard({ hw }) {
-  const img = hw.images?.[0] || '/hardware-images/placeholder.svg';
+  const img = hw.images?.[0] || '/placeholder.svg';
   return (
     <a href={`/hardware/${hw.slug}`} className="card">
       <img className="card-img" src={img} alt={hw.name} loading="lazy" />
