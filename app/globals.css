@@ -1,17 +1,41 @@
+/* Font self-hosted (stessi di rizzoaiacademy.com): Space Grotesk per i titoli, Lato per il testo */
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/space-grotesk.woff2') format('woff2');
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lato';
+  src: url('/fonts/lato-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lato';
+  src: url('/fonts/lato-700.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
 :root {
-  --bg: #0b0e14;
-  --bg-soft: #11151f;
-  --card: #151a26;
-  --card-hover: #1a2130;
-  --border: #232b3d;
-  --text: #e6eaf2;
+  /* Palette ufficiale rizzoaiacademy.com */
+  --bg: #0e0c17;
+  --bg-soft: #14111f;
+  --card: #0d101b;
+  --card-hover: #12172a;
+  --border: #2f3c51;
+  --text: #ffffff;
   --text-dim: #9aa5b8;
-  --accent: #5b8cff;
-  --accent-2: #8f6bff;
+  --accent: #2191f3;
+  --accent-2: #5b47fa;
+  --gradient: linear-gradient(60deg, #2191f3 0%, #5b47fa 100%);
   --success: #34d399;
   --warning: #fbbf24;
   --danger: #f87171;
-  --radius: 14px;
+  --radius: 10px;
 }
 
 * {
@@ -24,8 +48,15 @@ body {
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Lato', 'Segoe UI', system-ui, -apple-system, sans-serif;
   line-height: 1.55;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
 }
 
 a {
@@ -44,7 +75,7 @@ a {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(11, 14, 20, 0.85);
+  background: rgba(14, 12, 23, 0.85);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
 }
@@ -62,19 +93,32 @@ a {
   color: var(--text);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-.logo-mark {
-  color: var(--accent);
+.logo img {
+  height: 30px;
+  width: auto;
+  display: block;
 }
 
 .logo-sub {
-  color: var(--text-dim);
-  font-weight: 400;
-  font-size: 0.85rem;
-  border-left: 1px solid var(--border);
-  padding-left: 8px;
+  color: var(--text);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
+  background: var(--bg-soft);
+}
+
+.header-inner nav {
+  display: flex;
+  align-items: center;
+  gap: 18px;
 }
 
 .header-inner nav a {
@@ -101,8 +145,9 @@ a {
 
 .hero h1 {
   font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 700;
   margin: 0 0 12px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: var(--gradient);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -139,8 +184,8 @@ a {
 }
 
 .filter-btn.active {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--gradient);
+  border-color: transparent;
   color: #fff;
 }
 
@@ -364,20 +409,22 @@ a {
 
 .btn {
   display: inline-block;
-  background: var(--accent);
+  background: var(--gradient);
   color: #fff;
   border: none;
-  border-radius: 10px;
-  padding: 10px 20px;
+  border-radius: 100px;
+  padding: 11px 24px;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
+  transition: filter 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
 }
 
 .btn:hover {
-  background: #4a7bef;
+  filter: brightness(1.12);
   transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(91, 71, 250, 0.35);
 }
 
 .btn:disabled {
@@ -771,4 +818,103 @@ a {
   cursor: pointer;
   font-size: 0.68rem;
   text-decoration: underline;
+}
+
+/* ---------- Pagina di accesso (stile rizzoaiacademy.com) ---------- */
+.accesso-wrap {
+  min-height: calc(100vh - 220px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.accesso-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px 36px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.accesso-logo {
+  display: flex;
+  justify-content: center;
+}
+
+.accesso-logo img {
+  height: 44px;
+  width: auto;
+}
+
+.accesso-card h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.accesso-card .lead {
+  color: var(--text-dim);
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.accesso-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: center;
+  background: rgba(33, 145, 243, 0.12);
+  border: 1px solid rgba(33, 145, 243, 0.35);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.accesso-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin: 4px 0;
+}
+
+.accesso-divider::before,
+.accesso-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--border);
+}
+
+.accesso-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.accesso-cta p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.accesso-help {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+.accesso-help a {
+  color: var(--accent);
 }

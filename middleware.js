@@ -22,7 +22,7 @@ const TRAP_PREFIXES = [
 ];
 
 // Path esenti dal cancello: pagina di accesso, admin API (hanno il Bearer), trappola, asset pubblici
-const GATE_EXEMPT = ['/accesso', '/api/accesso', '/api/admin', '/api/trap', '/hardware-images', '/icon.svg', '/robots.txt'];
+const GATE_EXEMPT = ['/accesso', '/api/accesso', '/api/admin', '/api/trap', '/hardware-images', '/brand', '/fonts', '/icon.svg', '/robots.txt'];
 
 async function accessDigest(key) {
   const data = new TextEncoder().encode(`${key}::academy-gate`);

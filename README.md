@@ -26,6 +26,10 @@ nessun edit/delete lato pubblico, quindi nessuno può cancellare i commenti degl
   dalla dashboard (tab "Trappola") e via API/MCP.
 - **Moderazione admin**: dashboard web a `/admin` + endpoint protetti da token per gestire
   prodotti (crea/modifica/elimina) e commenti (nascondi/mostra/elimina)
+- **Grafica ufficiale rizzoaiacademy.com**: stessa palette (sfondo `#0e0c17`, card `#0d101b`,
+  bordi `#2f3c51`), gradiente brand `#2191f3 → #5b47fa` sui bottoni pill, font Space Grotesk
+  (titoli) e Lato (testo) self-hosted in `public/fonts/`, logo ufficiale in `public/brand/`.
+  La pagina `/accesso` spiega che l'Hub è riservato agli iscritti e linka il sito dell'Academy
 - Tema dark, responsive mobile-first, tutto in italiano
 
 ## Stack

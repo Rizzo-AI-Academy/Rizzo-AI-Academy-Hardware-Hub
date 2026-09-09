@@ -1,5 +1,5 @@
 import { listHardware } from '@/lib/db';
-import Catalog from './components/Catalog';
+import Catalog from '@/app/components/Catalog';
 
 export const dynamic = 'force-dynamic';
 

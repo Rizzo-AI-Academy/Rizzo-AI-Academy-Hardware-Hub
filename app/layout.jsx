@@ -14,11 +14,15 @@ export default function RootLayout({ children }) {
         <header className="site-header">
           <div className="container header-inner">
             <a href="/" className="logo">
-              <span className="logo-mark">◆</span> Rizzo AI Academy
+              {/* Logo ufficiale Rizzo AI Academy */}
+              <img src="/brand/logo.png" alt="Rizzo AI Academy" />
               <span className="logo-sub">Hardware Hub</span>
             </a>
             <nav>
               <a href="/">Catalogo</a>
+              <a href="https://www.rizzoaiacademy.com/" target="_blank" rel="noopener noreferrer">
+                rizzoaiacademy.com ↗
+              </a>
             </nav>
           </div>
         </header>
@@ -26,8 +30,12 @@ export default function RootLayout({ children }) {
         <footer className="site-footer">
           <div className="container">
             <p>
-              Rizzo AI Academy — Hardware Hub · Catalogo community-driven di hardware per AI.
-              I commenti si possono solo aggiungere: nessuno può cancellare quelli degli altri.
+              <a href="https://www.rizzoaiacademy.com/" target="_blank" rel="noopener noreferrer">
+                Rizzo AI Academy
+              </a>{' '}
+              — Hardware Hub · Catalogo community-driven di hardware per AI, riservato agli
+              iscritti. I commenti si possono solo aggiungere: nessuno può cancellare quelli degli
+              altri.
             </p>
           </div>
         </footer>
