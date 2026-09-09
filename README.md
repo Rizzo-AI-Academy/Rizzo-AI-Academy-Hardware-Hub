@@ -150,9 +150,26 @@ con accesso shell, ecc.) sulla VPS via SSH e incolla il brief qui sotto. L'agent
 ### Prerequisiti (li prepara Carlo)
 
 1. Un **VPS Ubuntu 22.04+** con accesso SSH
-2. Un **dominio** (es. `hardware.esempio.it`) con record A che punta all'IP del VPS
+2. Un **dominio** (es. `hardware.esempio.it`) con record A che punta all'IP del VPS.
+   **Non ce l'hai ancora? Nessun problema**: vedi "Prova senza dominio" qui sotto —
+   il dominio si può aggiungere dopo senza reinstallare nulla.
 3. Carlo ti ha aggiunto come **collaboratore** della repo privata GitHub
-4. Carlo ti ha detto il dominio da usare
+4. Carlo ti ha detto il dominio da usare (quando lo avrete)
+
+### Prova senza dominio (solo per Simone, prima di andare online)
+
+Per testare l'installazione **senza dominio e senza aprire porte**, basta un tunnel SSH
+dal PC di Simone:
+
+```bash
+ssh -L 3000:localhost:3000 utente@IP-DELLA-VPS
+# lascia aperto il terminale, poi apri nel browser: http://localhost:3000
+```
+
+Così vedi catalogo e dashboard (`http://localhost:3000/admin`) in totale sicurezza:
+il traffico passa cifrato dentro SSH. ⚠️ Evita invece `http://IP-VPS:3000` diretto:
+senza HTTPS il token admin viaggerebbe in chiaro. Quando il sito diventa pubblico per
+la community, il dominio + Caddy (HTTPS) è obbligatorio — sono le 3 righe nel brief.
 
 ### 📋 Brief da incollare all'agente AI (copia tutto il blocco)
 
