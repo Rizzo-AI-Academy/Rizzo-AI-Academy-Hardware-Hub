@@ -13,6 +13,9 @@ export const CATEGORIES = {
 export const PRODUCTS = [
   {
     slug: 'mac-mini-m4',
+    image_urls: [
+      'https://www.apple.com/v/mac-mini/ab/images/meta/mac-mini__dvce2jrm11w2_og.jpg',
+    ],
     name: 'Mac mini M4',
     brand: 'Apple',
     category: CATEGORIES.APPLE,
@@ -33,6 +36,9 @@ export const PRODUCTS = [
   },
   {
     slug: 'mac-mini-m4-pro',
+    image_urls: [
+      'https://www.apple.com/v/mac-mini/ab/images/meta/mac-mini__dvce2jrm11w2_og.jpg',
+    ],
     name: 'Mac mini M4 Pro',
     brand: 'Apple',
     category: CATEGORIES.APPLE,
@@ -53,6 +59,9 @@ export const PRODUCTS = [
   },
   {
     slug: 'macbook-pro-14-m4',
+    image_urls: [
+      'https://www.apple.com/v/macbook-pro/ax/images/meta/macbook-pro__difvbgz1plsi_og.png',
+    ],
     name: 'MacBook Pro 14" M4',
     brand: 'Apple',
     category: CATEGORIES.APPLE,
@@ -75,6 +84,9 @@ export const PRODUCTS = [
   },
   {
     slug: 'macbook-air-m4-13',
+    image_urls: [
+      'https://www.apple.com/v/macbook-air/z/images/meta/macbook_air_mx__ez5y0k5yy7au_og.png',
+    ],
     name: 'MacBook Air 13" M4',
     brand: 'Apple',
     category: CATEGORIES.APPLE,
@@ -97,6 +109,11 @@ export const PRODUCTS = [
   },
   {
     slug: 'nvidia-dgx-spark',
+    image_urls: [
+      'https://d2vfia6k6wrouk.cloudfront.net/productimages/ef15a000-baca-4109-a81e-b2f9010d00f9/images/spark-3qtr-right.png',
+      'https://d2vfia6k6wrouk.cloudfront.net/productimages/ef15a000-baca-4109-a81e-b2f9010d00f9/images/spark-3qtr-top-left.png',
+      'https://d2vfia6k6wrouk.cloudfront.net/productimages/ef15a000-baca-4109-a81e-b2f9010d00f9/images/spark-back.png',
+    ],
     name: 'NVIDIA DGX Spark',
     brand: 'NVIDIA',
     category: CATEGORIES.WORKSTATION,
@@ -119,6 +136,9 @@ export const PRODUCTS = [
   },
   {
     slug: 'nvidia-jetson-orin-nano-super',
+    image_urls: [
+      'https://www.nvidia.com/content/dam/en-zz/Solutions/autonomous-machines/embedded-systems/nano-super-developer-kit/jetson-orin-nano-super-developer-kit-og.jpg',
+    ],
     name: 'Jetson Orin Nano Super Developer Kit',
     brand: 'NVIDIA',
     category: CATEGORIES.DEV_BOARD,
@@ -144,6 +164,9 @@ export const PRODUCTS = [
   },
   {
     slug: 'asus-nuc-14-pro-plus',
+    image_urls: [
+      'https://dlcdnwebimgs.asus.com/gain/fc30da7c-376f-453a-9ba0-b528bc3c62ae/',
+    ],
     name: 'ASUS NUC 14 Pro+',
     brand: 'ASUS (linea Intel NUC)',
     category: CATEGORIES.MINI_PC_WIN,
@@ -166,6 +189,10 @@ export const PRODUCTS = [
   },
   {
     slug: 'minisforum-ai-x1-pro',
+    image_urls: [
+      'https://cdn.shopify.com/s/files/1/0585/0588/7927/files/minisforum-ai-x1-pro-470-ai-mini-pc-1_278f23e8-69a1-4d09-8e80-d30e1eec20bf.png',
+      'https://cdn.shopify.com/s/files/1/0585/0588/7927/files/minisforum-ai-x1-pro-470-ai-mini-pc-9_818ad681-cd8c-4898-8bc1-68555a040689.png',
+    ],
     name: 'Minisforum AI X1 Pro-370',
     brand: 'Minisforum',
     category: CATEGORIES.MINI_PC_WIN,
@@ -186,6 +213,10 @@ export const PRODUCTS = [
   },
   {
     slug: 'beelink-ser9-pro',
+    image_urls: [
+      'https://cdn.shopify.com/s/files/1/0505/1360/8884/files/SER9-255__01_49e04289-4995-4d9a-b5a5-a1e9fe380d50.jpg',
+      'https://cdn.shopify.com/s/files/1/0505/1360/8884/files/SER9-Pro__02_1b39d376-1ab5-469b-8d32-a2930f107e16.jpg',
+    ],
     name: 'Beelink SER9 Pro (HX 370)',
     brand: 'Beelink',
     category: CATEGORIES.MINI_PC_WIN,
@@ -206,6 +237,9 @@ export const PRODUCTS = [
   },
   {
     slug: 'gmktec-evo-x2',
+    image_urls: [
+      'https://cdn.shopify.com/s/files/1/0715/1314/5498/files/3236633c9c3cf624fc617d8ceea1246c_28049231-bded-49ff-915d-3fd6ae59ddef.png',
+    ],
     name: 'GMKtec EVO-X2',
     brand: 'GMKtec',
     category: CATEGORIES.MINI_PC_WIN,
@@ -226,6 +260,10 @@ export const PRODUCTS = [
   },
   {
     slug: 'minisforum-ms-s1-max',
+    image_urls: [
+      'https://cdn.shopify.com/s/files/1/0585/0588/7927/files/minisforum-ms-s1-max-mini-pc-1.png',
+      'https://cdn.shopify.com/s/files/1/0585/0588/7927/files/minisforum-ms-s1-max-mini-pc-2.png',
+    ],
     name: 'Minisforum MS-S1 MAX',
     brand: 'Minisforum',
     category: CATEGORIES.WORKSTATION,
@@ -246,6 +284,10 @@ export const PRODUCTS = [
   },
   {
     slug: 'raspberry-pi-5-ai-hat-plus',
+    image_urls: [
+      'https://assets.raspberrypi.com/static/5c6df05d1ea0c51f89423d744a18033f/25682/hat.webp',
+      'https://assets.raspberrypi.com/static/c671804c05a51efc4e3c2a1bdcbafbcf/e8238/raspberry-pi-5.webp',
+    ],
     name: 'Raspberry Pi 5 + AI HAT+ (26 TOPS)',
     brand: 'Raspberry Pi',
     category: CATEGORIES.DEV_BOARD,
@@ -269,6 +311,9 @@ export const PRODUCTS = [
   },
   {
     slug: 'geekom-gt1-mega',
+    image_urls: [
+      'https://img.geekom.it/geekomit/2026/07/GT1-Mega-new.webp',
+    ],
     name: 'Geekom GT1 Mega',
     brand: 'Geekom',
     category: CATEGORIES.MINI_PC_WIN,
@@ -286,5 +331,36 @@ export const PRODUCTS = [
       os: 'Windows 11 Pro',
     },
     buy_links: [{ label: 'Geekom', url: 'https://www.geekom.it/' }],
+  },
+  {
+    slug: 'bosgame-m5-ai-max-395',
+    image_urls: [
+      'https://img-va.myshopline.com/image/store/1673232660007/M5--3.png',
+      'https://img-va.myshopline.com/image/store/1673232660007/M5-Ryzen-AI-Max-395-01-0.jpeg',
+      'https://img-va.myshopline.com/image/store/1673232660007/M5-Ryzen-AI-Max-395-02.jpeg',
+    ],
+    name: 'Bosgame M5 AI Mini Desktop (Ryzen AI Max+ 395)',
+    brand: 'Bosgame',
+    category: CATEGORIES.MINI_PC_WIN,
+    price_eur: 2583.95,
+    price_note: 'Store Bosgame EU, configurazione 128GB + 2TB (settembre 2026); la 96GB parte da ~€2.067',
+    description:
+      'Mini PC “Strix Halo” con Ryzen AI Max+ 395 (16C/32T Zen 5) e Radeon 8060S (40 CU RDNA 3.5). Fino a 128GB LPDDR5X-8000 saldata, di cui fino a 96GB allocabili alla GPU: esegue in locale LLM grandi (~70-120B quantizzati) senza scheda dedicata. Due slot M.2, doppia USB4, SD 4.0 e LAN 2.5G. Spedito da magazzino tedesco per l’UE.',
+    specs: {
+      cpu: 'AMD Ryzen AI Max+ 395 (16C/32T Zen 5, fino a 5,1GHz)',
+      ram: '96 o 128GB LPDDR5X-8000 saldata (fino a 96GB allocabili alla GPU)',
+      gpu_npu: 'Radeon 8060S (40 CU RDNA 3.5, 2,9GHz) + NPU XDNA 2',
+      tops_ai: '50 TOPS NPU / 126 TOPS totali (dato AMD)',
+      storage: 'SSD 2TB M.2 2280 PCIe 4.0 x4, 2 slot',
+      ports: '2× USB4 Type-C, 3× USB 3.2 Gen2, 2× USB 2.0, SD 4.0, LAN 2.5G, HDMI',
+      power_w: 'Tre profili di potenza (Quiet/Balanced/Performance), TDP fino a ~140W — da verificare',
+      os: 'Windows 11',
+    },
+    buy_links: [
+      {
+        label: 'Bosgame Store',
+        url: 'https://www.bosgamepc.com/products/bosgame-m5-ai-mini-desktop-ryzen-ai-max-395',
+      },
+    ],
   },
 ];
