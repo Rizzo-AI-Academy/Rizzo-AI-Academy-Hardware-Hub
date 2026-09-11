@@ -25,9 +25,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.mjs ./next.config.mjs
 COPY --from=builder /app/scripts ./scripts
 
-# Directory dati SQLite (montare un volume qui per persistere)
+# Directory dati SQLite: montare qui un volume persistente (Docker Compose o Railway Volume).
+# Niente istruzione VOLUME: Railway la rifiuta in build.
 RUN mkdir -p /app/data
-VOLUME ["/app/data"]
 
 EXPOSE 3000
 ENV PORT=3000
