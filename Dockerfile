@@ -24,6 +24,8 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.mjs ./next.config.mjs
 COPY --from=builder /app/scripts ./scripts
+# lib/ serve al seed (placeholder.mjs) e alle rotte runtime
+COPY --from=builder /app/lib ./lib
 
 # Directory dati SQLite: montare qui un volume persistente (Docker Compose o Railway Volume).
 # Niente istruzione VOLUME: Railway la rifiuta in build.
